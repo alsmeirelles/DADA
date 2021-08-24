@@ -325,7 +325,6 @@ class EFVGG16(VGG16):
  
         #Twelth layer
         if depth >= 12:
-            print(f"depth {depth}")
             x = ZeroPadding2D(padding=1)(x)
             x = Convolution2D(filters.get(512,512), (3, 3),strides=1,
                                   padding='valid',
