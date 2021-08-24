@@ -10,7 +10,7 @@ import tensorflow as tf
 #Network
 from keras.models import Sequential,Model
 from keras.layers import Input,Activation
-from keras.layers import Dense, Dropout, Flatten
+from keras.layers import Dense, Dropout, Flatten, BatchNormalization
 from keras.layers import ZeroPadding2D,Convolution2D, MaxPooling2D
 from keras import backend, optimizers
 from keras.utils import multi_gpu_model
@@ -189,6 +189,7 @@ class EFVGG16(VGG16):
                     #weights=layer_dict['block1_conv1'].get_weights(),
                     kernel_regularizer=regularizers.l2(wd(0.1,S)))(inp)
         #x = GroupNormalization(groups=4,axis=-1))(x)
+        x = BatchNormalization()(x)
         x = Activation('relu')(x)
         x = Dropout(0.1)(x)
  
@@ -201,6 +202,7 @@ class EFVGG16(VGG16):
                     #weights=layer_dict['block1_conv2'].get_weights(),
                     kernel_regularizer=regularizers.l2(wd(0.1,S)))(x)
         #x = GroupNormalization(groups=4,axis=-1)(x)
+        x = BatchNormalization()(x)
         x = Activation('relu')(x)
         x = MaxPooling2D(pool_size=(2, 2),strides=2)(x)
         x = Dropout(0.1)(x)
@@ -214,6 +216,7 @@ class EFVGG16(VGG16):
                     #weights=layer_dict['block2_conv1'].get_weights(),
                     kernel_regularizer=regularizers.l2(wd(0.1,S)))(x)
         #x = GroupNormalization(groups=4,axis=-1)(x)
+        x = BatchNormalization()(x)
         x = Activation('relu')(x)
         x = Dropout(0.1)(x)
  
@@ -226,6 +229,7 @@ class EFVGG16(VGG16):
                 #weights=layer_dict['block2_conv2'].get_weights(),
                 kernel_regularizer=regularizers.l2(wd(0.1,S)))(x)
         #x = GroupNormalization(groups=4,axis=-1)(x)
+        x = BatchNormalization()(x)
         x = Activation('relu')(x)
         x = MaxPooling2D(pool_size=(2, 2),strides=2)(x)
         x = Dropout(0.1)(x)
@@ -240,6 +244,7 @@ class EFVGG16(VGG16):
                                   #weights=layer_dict['block3_conv1'].get_weights(),
                                   kernel_regularizer=regularizers.l2(wd(0.2,S)))(x)
             #x = GroupNormalization(groups=4,axis=-1)(x)
+            x = BatchNormalization()(x)
             x = Activation('relu')(x)
             x = Dropout(0.2)(x)
  
@@ -253,6 +258,7 @@ class EFVGG16(VGG16):
                                   #weights=layer_dict['block3_conv2'].get_weights(),
                                   kernel_regularizer=regularizers.l2(wd(0.2,S)))(x)
             #x = GroupNormalization(groups=4,axis=-1)(x)
+            x = BatchNormalization()(x)
             x = Activation('relu')(x)
             x = Dropout(0.2)(x)
 
@@ -266,6 +272,7 @@ class EFVGG16(VGG16):
                                   #weights=layer_dict['block3_conv3'].get_weights(),
                                   kernel_regularizer=regularizers.l2(wd(0.2,S)))(x)
             #x = GroupNormalization(groups=4,axis=-1)(x)
+            x = BatchNormalization()(x)
             x = Activation('relu')(x)
             x = MaxPooling2D(pool_size=(2, 2),strides=2)(x)
             x = Dropout(0.2)(x)
@@ -280,6 +287,7 @@ class EFVGG16(VGG16):
                                   #weights=layer_dict['block4_conv1'].get_weights(),
                                   kernel_regularizer=regularizers.l2(wd(0.2,S)))(x)
             #x = GroupNormalization(groups=4,axis=-1)(x)
+            x = BatchNormalization()(x)
             x = Activation('relu')(x)
             x = Dropout(0.2)(x)
 
@@ -293,6 +301,7 @@ class EFVGG16(VGG16):
                                   #weights=layer_dict['block4_conv1'].get_weights(),
                                   kernel_regularizer=regularizers.l2(wd(0.2,S)))(x)
             #x = GroupNormalization(groups=4,axis=-1)(x)
+            x = BatchNormalization()(x)
             x = Activation('relu')(x)
             x = Dropout(0.2)(x)        
  
@@ -306,6 +315,7 @@ class EFVGG16(VGG16):
                                   #weights=layer_dict['block4_conv2'].get_weights(),
                                   kernel_regularizer=regularizers.l2(wd(0.2,S)))(x)
             #x = GroupNormalization(groups=4,axis=-1)(x)
+            x = BatchNormalization()(x)
             x = Activation('relu')(x)
             x = MaxPooling2D(pool_size=(2, 2),strides=2)(x)
             x = Dropout(0.2)(x)
@@ -320,6 +330,7 @@ class EFVGG16(VGG16):
                                   #weights=layer_dict['block4_conv3'].get_weights(),
                                   kernel_regularizer=regularizers.l2(wd(0.2,S)))(x)
             #x = GroupNormalization(groups=4,axis=-1)(x)
+            x = BatchNormalization()(x)
             x = Activation('relu')(x)
             x = Dropout(0.2)(x)
  
@@ -333,6 +344,7 @@ class EFVGG16(VGG16):
                                   #weights=layer_dict['block5_conv1'].get_weights(),
                                   kernel_regularizer=regularizers.l2(wd(0.3,S)))(x)
             #x = GroupNormalization(groups=4,axis=-1)(x)
+            x = BatchNormalization()(x)
             x = Activation('relu')(x)
             x = Dropout(0.3)(x)
 
@@ -346,6 +358,7 @@ class EFVGG16(VGG16):
                                   #weights=layer_dict['block5_conv3'].get_weights(),
                                   kernel_regularizer=regularizers.l2(wd(0.3,S)))(x)
             #x = GroupNormalization(groups=4,axis=-1)(x)
+            x = BatchNormalization()(x)
             x = Activation('relu')(x)
         x = MaxPooling2D(pool_size=(2, 2),strides=2,name='feature')(x)
         x = Dropout(0.3)(x)

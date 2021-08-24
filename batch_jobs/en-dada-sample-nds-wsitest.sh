@@ -9,7 +9,7 @@
 #echo commands to stdout
 #set -x
 
-DIRID="EN/EN-207"
+DIRID="EN/EN-220"
 
 cd /ocean/projects/asc130006p/alsm/active-learning/Segframe
 
@@ -23,7 +23,7 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/ocean/projects/asc130006p/alsm/venv/lib
 echo '[START] training'
 date +"%D %T"
 
-time python3 main.py -i -v --al -strategy EnsembleTrainer -predst /ocean/projects/asc130006p/alsm/active-learning/data/nds300 -split 0.90 0.01 0.09 -net EFInception -data CellRep -init_train 500 -ac_steps 20 -emodels 3 -ac_function kmng_uncert -un_function ensemble_bald -acquire 200 -d -e 50 -b 96 -tdim 240 240 -clusters 20 -out logs/ -cpu 15 -gpu 1 -tn -sv -nsw -wpath results/$DIRID -model_dir results/$DIRID -logdir results/$DIRID -cache results/$DIRID -pca 50 -sample 2000 -wsi_split 5 -pred_size 15000 -load_train -spool 2 -k -f1 30 -lr 0.0001 -phi 3 
+time python3 main.py -i -v --al -strategy EnsembleTrainer -predst /ocean/projects/asc130006p/alsm/active-learning/data/nds300 -split 0.90 0.01 0.09 -net EFVGG16 -data CellRep -init_train 500 -ac_steps 20 -emodels 3 -ac_function kmng_uncert -un_function ensemble_bald -acquire 200 -d -e 50 -b 64 -tdim 240 240 -clusters 20 -out logs/ -cpu 15 -gpu 1 -tn -sv -nsw -wpath results/$DIRID -model_dir results/$DIRID -logdir results/$DIRID -cache results/$DIRID -pca 50 -sample 2000 -wsi_split 5 -pred_size 15000 -load_train -spool 2 -k -f1 30 -lr 0.0005 -phi 3 -tnet EFInception -tnpred 2 -tnphi 1
 
 #-plw -lyf 103 
 

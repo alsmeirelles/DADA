@@ -10,6 +10,7 @@ import math
 import argparse
 import pickle
 import importlib
+import re
 from sklearn.cluster import KMeans
     
 def _process_al_metadata(config):
@@ -30,7 +31,7 @@ def _process_al_metadata(config):
         elif f.startswith('al-metadata'):
             ac_id = int(f.split('.')[0].split('-')[3][1:]) + 1
             net = f.split('.')[0].split('-')[2]
-            if not config.ac_n is None and max(config.ac_n) < ac_id:
+            if not config.ac_n is None and max(config.ac_n)+1 < ac_id:
                 continue
             if (not config.net is None and config.net == net) or config.net is None:
                 acfiles[ac_id] = os.path.join(config.sdir,f)
@@ -76,7 +77,7 @@ def _process_al_metadata(config):
                 mask = np.isin(ctrain,initial_set,assume_unique=True,invert=True)
                 if config.debug:
                     dbm = np.isin(ctrain,initial_set,assume_unique=True,invert=False)
-                    print("Images in both sets ({}): {}".format(dbm.shape[0],train[0][dbm]))
+                    print("Images in both sets: {}".format(dbm.shape[0]))
 
             imgs = train[0][mask]
             labels = train[1][mask]
@@ -98,6 +99,7 @@ def _process_test_images(config):
 
     dsfiles = {}
     testfile = '{}-testset.pik'.format(config.ds)
+    fX = None
     if not testfile in files:
         #TODO: if no test file, test set is defined as last items in metadata array and can be returned
         return None
@@ -106,8 +108,10 @@ def _process_test_images(config):
             _,tset = pickle.load(fd)
         with open(os.path.join(config.sdir,'{}-metadata.pik'.format(config.ds)),'rb') as fd:
             X,Y,_ = pickle.load(fd)
-
-        tx = X[tset[:config.test]]
+            fX = np.asarray(X)
+            del(X)
+        
+        tx = fX[tset[:config.test]]
 
     return tx
         
@@ -255,7 +259,7 @@ def _generate_label_from_name(config):
             match = rg.match(f)
             if not match:
                 continue
-            line = '{} {} {} {} {}'.format(f,match.groups('lb'),match.groups('tcga'),match.groups('x'),match.groups('y'))
+            line = '{} {} {} {} {}\n'.format(f,match.group('lb'),match.group('tcga'),match.group('x'),match.group('y'))
             label.write(line)
 
 def _append_label(config):
@@ -646,6 +650,8 @@ def process_al_metadata(config):
     if config.test > 0:
         ts_imgs = _process_test_images(config)
         copy_to = os.path.join(config.out_dir,'testset')
+        if not os.path.isdir(copy_to):
+            os.mkdir(copy_to)
         if config.gen_label:
             label = open(os.path.join(config.out_dir,'testset','label.txt'),'w')
         for img in ts_imgs:
@@ -655,7 +661,7 @@ def process_al_metadata(config):
             if config.gen_label:
                 im_lb = img_name.split('.')[0].split('_')[1]
                 x,y = img.getCoord()
-                label.write("{} {} {} {} {}".format(img_name,im_lb,img.getOrigin(),x,y))
+                label.write("{} {} {} {} {}\n".format(img_name,im_lb,img.getOrigin(),x,y))
                 
     if config.gen_label:
         print("Generating label files...")
