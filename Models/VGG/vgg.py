@@ -64,8 +64,12 @@ class VGG16(GenericEnsemble):
         """
         Returns a VGG 16 model instance, final fully-connected layers are substituted by Conv2Ds
         
-        @param pre_trained <boolean>: returned model should be pre-trained or not
+        @param preload <boolean>: preload weights
+        @param training <boolean>: network should be built in training mode (applied to dropout layers)
         """
+        training = kwargs.get('training',None)
+        preload = kwargs.get('preload_w')
+        lf = kwargs.get('layer_freeze')
         
         if backend.image_data_format() == 'channels_first':
             input_shape = (channels, height, width)
@@ -77,7 +81,7 @@ class VGG16(GenericEnsemble):
             
         self.cache_m = CacheManager()
         
-        model = self._build_architecture(input_shape)
+        model = self._build_architecture(input_shape,training,preload,lf)
         
         #Check if previous training and LR is saved, if so, use it
         lr_cache = "{0}_learning_rate.txt".format(self.name)
@@ -121,14 +125,22 @@ class VGG16(GenericEnsemble):
 
         return (model,parallel_model)
 
-    def _build_architecture(self,input_shape):
-        original_vgg16 = vgg16.VGG16(weights=self.cache_m.fileLocation('vgg16_weights_notop.h5'),
+    def _build_architecture(self,input_shape,training,preload=True,ensemble=False,layer_freeze=0):
+        weights = None
+        if preload:
+            weights = self.cache_m.fileLocation('vgg16_weights_notop.h5')
+            
+        original_vgg16 = vgg16.VGG16(weights=weights,
                                          include_top=False,
                                          input_shape=input_shape)
 
-        #Freeze initial layers, except for the last 3:
-        #for layer in original_vgg16.layers[:-2]:
-        #    layer.trainable = False
+        if training:
+            print("VGG16: not ready to Bayesian uncertainty calculation. Use EFVGG16")
+
+        #Freeze initial layers:
+        if layer_freeze > 0 and preload:
+            for layer in original_vgg16.layers[:layer_freeze]:
+                layer.trainable = False
             
         model = Sequential()
         model.add(original_vgg16)
@@ -152,7 +164,7 @@ class EFVGG16(VGG16):
     def __init__(self,config,ds):
         super(EFVGG16,self).__init__(config=config,ds=ds,name = "EFVGG16")
 
-    def _build_architecture(self,input_shape):
+    def _build_architecture(self,input_shape,training=None,preload=True,ensemble=False,layer_freeze=0):
 
         original_vgg16 = vgg16.VGG16(weights=self.cache_m.fileLocation('vgg16_weights_notop.h5'),
                                          include_top=False,
@@ -191,7 +203,7 @@ class EFVGG16(VGG16):
         #x = GroupNormalization(groups=4,axis=-1))(x)
         x = BatchNormalization()(x)
         x = Activation('relu')(x)
-        x = Dropout(0.1)(x)
+        x = Dropout(0.1)(x,training=training)
  
         #Second layer
         x = ZeroPadding2D(padding=1)(x)
@@ -205,7 +217,7 @@ class EFVGG16(VGG16):
         x = BatchNormalization()(x)
         x = Activation('relu')(x)
         x = MaxPooling2D(pool_size=(2, 2),strides=2)(x)
-        x = Dropout(0.1)(x)
+        x = Dropout(0.1)(x,training=training)
  
         #Third layer
         x = ZeroPadding2D(padding=1)(x)
@@ -218,7 +230,7 @@ class EFVGG16(VGG16):
         #x = GroupNormalization(groups=4,axis=-1)(x)
         x = BatchNormalization()(x)
         x = Activation('relu')(x)
-        x = Dropout(0.1)(x)
+        x = Dropout(0.1)(x,training=training)
  
         #Fourth layer
         x = ZeroPadding2D(padding=1)(x)
@@ -232,7 +244,7 @@ class EFVGG16(VGG16):
         x = BatchNormalization()(x)
         x = Activation('relu')(x)
         x = MaxPooling2D(pool_size=(2, 2),strides=2)(x)
-        x = Dropout(0.1)(x)
+        x = Dropout(0.1)(x,training=training)
  
         #Fifth layer
         if depth >= 6:
@@ -246,7 +258,7 @@ class EFVGG16(VGG16):
             #x = GroupNormalization(groups=4,axis=-1)(x)
             x = BatchNormalization()(x)
             x = Activation('relu')(x)
-            x = Dropout(0.2)(x)
+            x = Dropout(0.2)(x,training=training)
  
         #Sith layer
         if depth >= 7:
@@ -260,7 +272,7 @@ class EFVGG16(VGG16):
             #x = GroupNormalization(groups=4,axis=-1)(x)
             x = BatchNormalization()(x)
             x = Activation('relu')(x)
-            x = Dropout(0.2)(x)
+            x = Dropout(0.2)(x,training=training)
 
         #Seventh layer
         if depth >= 8:
@@ -275,7 +287,7 @@ class EFVGG16(VGG16):
             x = BatchNormalization()(x)
             x = Activation('relu')(x)
             x = MaxPooling2D(pool_size=(2, 2),strides=2)(x)
-            x = Dropout(0.2)(x)
+            x = Dropout(0.2)(x,training=training)
  
         #Eigth layer
         if depth >= 9:
@@ -289,7 +301,7 @@ class EFVGG16(VGG16):
             #x = GroupNormalization(groups=4,axis=-1)(x)
             x = BatchNormalization()(x)
             x = Activation('relu')(x)
-            x = Dropout(0.2)(x)
+            x = Dropout(0.2)(x,training=training)
 
         #Nineth layer
         if depth >= 10:
@@ -303,7 +315,7 @@ class EFVGG16(VGG16):
             #x = GroupNormalization(groups=4,axis=-1)(x)
             x = BatchNormalization()(x)
             x = Activation('relu')(x)
-            x = Dropout(0.2)(x)        
+            x = Dropout(0.2)(x,training=training)        
  
         #Tenth layer
         if depth >= 11:
@@ -318,7 +330,7 @@ class EFVGG16(VGG16):
             x = BatchNormalization()(x)
             x = Activation('relu')(x)
             x = MaxPooling2D(pool_size=(2, 2),strides=2)(x)
-            x = Dropout(0.2)(x)
+            x = Dropout(0.2)(x,training=training)
  
         #Eleventh layer
         if depth >= 12:
@@ -332,7 +344,7 @@ class EFVGG16(VGG16):
             #x = GroupNormalization(groups=4,axis=-1)(x)
             x = BatchNormalization()(x)
             x = Activation('relu')(x)
-            x = Dropout(0.2)(x)
+            x = Dropout(0.2)(x,training=training)
  
         #Twelth layer
         if depth >= 12:
@@ -346,7 +358,7 @@ class EFVGG16(VGG16):
             #x = GroupNormalization(groups=4,axis=-1)(x)
             x = BatchNormalization()(x)
             x = Activation('relu')(x)
-            x = Dropout(0.3)(x)
+            x = Dropout(0.3)(x,training=training)
 
         #Thirtenth layer
         if depth >= 13:
@@ -361,7 +373,7 @@ class EFVGG16(VGG16):
             x = BatchNormalization()(x)
             x = Activation('relu')(x)
         x = MaxPooling2D(pool_size=(2, 2),strides=2,name='feature')(x)
-        x = Dropout(0.3)(x)
+        x = Dropout(0.3)(x,training=training)
         
         #x = Convolution2D(filters.get(4096,4096), (7, 7),strides=1,padding='valid',kernel_initializer='he_normal',
         #                      kernel_regularizer=regularizers.l2(wd(0.5,S)))(x)
@@ -369,13 +381,13 @@ class EFVGG16(VGG16):
         x = Flatten()(x)
         x = Dense(4096,kernel_initializer='he_normal')(x)
         x = Activation('relu')(x)
-        x = Dropout(0.5)(x)
+        x = Dropout(0.5)(x,training=training)
         
         #x = Convolution2D(filters.get(4096,4096), (1, 1),strides=1,padding='valid',kernel_initializer='he_normal',
         #                      kernel_regularizer=regularizers.l2(wd(0.5,S)))(x)
         x = Dense(4096,kernel_initializer='he_normal')(x)
         x = Activation('relu')(x)
-        x = Dropout(0.5)(x)
+        x = Dropout(0.5)(x,training=training)
         
         #x = Convolution2D(self._ds.nclasses, (1, 1),strides=1,padding='valid',kernel_initializer='he_normal')(x)
         x = Dense(self._ds.nclasses,kernel_initializer='he_normal')(x)

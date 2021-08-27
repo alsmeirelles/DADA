@@ -39,7 +39,8 @@ class Inception(GenericEnsemble):
     def __init__(self,config,ds,name=None):
         super().__init__(config,ds,name=name)
         if name is None:
-            self.name = "Inception"
+            self.name = "Inception"        
+
         self._modelCache = "{0}-model.h5".format(self.name)
         self._weightsCache = "{0}-weights.h5".format(self.name)
         self._mgpu_weightsCache = "{0}-mgpu-weights.h5".format(self.name)
@@ -75,7 +76,6 @@ class Inception(GenericEnsemble):
         Custom build process
         """
         training = kwargs.get('training',None)
-        feature = kwargs.get('feature')
         preload = kwargs.get('preload_w')
         lf = kwargs.get('layer_freeze')
         allocated_gpus = kwargs.get('allocated_gpus')
@@ -85,7 +85,7 @@ class Inception(GenericEnsemble):
         else:
             input_shape = (height, width, channels)
 
-        model = self._build_architecture(input_shape,training,feature,preload,layer_freeze=lf)
+        model = self._build_architecture(input_shape,training,preload,layer_freeze=lf)
 
         return self._configure_compile(model,allocated_gpus)
 
@@ -134,12 +134,11 @@ class Inception(GenericEnsemble):
         return (model,parallel_model)        
 
 
-    def _build_architecture(self,input_shape,training=None,feature=False,preload=True,ensemble=False,layer_freeze=0):
+    def _build_architecture(self,input_shape,training=None,preload=True,ensemble=False,layer_freeze=0):
 
         """
         Parameters:
         - training <boolean>: sets network to training mode, wich enables dropout if there are DP layers
-        - feature <boolean>: build a feature extractor - DEPRECATED
         - preload <boolean>: preload Imagenet weights
         - ensemble <boolean>: builds an ensemble of networks from the Inception architecture
 
@@ -148,7 +147,6 @@ class Inception(GenericEnsemble):
         from . import inception_resnet_v2
         
         kwargs = {'training':training,
-                    'feature':feature,
                     'custom_top':False,
                     'preload':preload,
                     'layer_freeze':layer_freeze,
@@ -193,12 +191,11 @@ class EFInception(Inception):
         self.cache_m.registerFile(os.path.join(config.weights_path,self._weightsCache),self._weightsCache)
         self.cache_m.registerFile(os.path.join(config.weights_path,self._mgpu_weightsCache),self._mgpu_weightsCache)
 
-    def _build_architecture(self,input_shape,training=None,feature=False,preload=True,ensemble=False,**kwargs):
+    def _build_architecture(self,input_shape,training=None,preload=True,ensemble=False,**kwargs):
 
         """
         Parameters:
         - training <boolean>: sets network to training mode, wich enables dropout if there are DP layers
-        - feature <boolean>: build a feature extractor - DEPRECATED
         - preload <boolean>: preload Imagenet weights
         - ensemble <boolean>: builds an ensemble of networks from the Inception architecture
 
@@ -207,7 +204,6 @@ class EFInception(Inception):
         from . import EfficientInception as inception_resnet_v2
         
         kwargs = {'training':training,
-                    'feature':feature,
                     'custom_top':False,
                     'preload':preload,
                     'name':self.name,

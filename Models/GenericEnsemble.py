@@ -146,20 +146,20 @@ class GenericEnsemble(GenericModel):
         else:
             x = model.get_layer('feature').output
 
-        x = Flatten()(x)
+        if K.ndim(x) > 2:
+            x = Flatten()(x)
         f = K.function(model.inputs, [x])
 
         return f
         
     def build_ensemble(self,**kwargs):
         """
-        Builds an ensemble of M Inception models.
+        Builds an ensemble of M models.
 
         Weights are loaded here when new is set True because of the way ensembles should be built.
 
         Default build: avareges the output of the corresponding softmaxes
 
-        @param feature <boolean>: ensemble should be a feature extractor (no classification top)
         @param npfile <boolean>: loads weights from numpy files
         @param rbuild <boolean>: build a new ensemble body or use the last built
         @param new <boolean>: create a new ensemble from emodels or use one already available
@@ -201,7 +201,7 @@ class GenericEnsemble(GenericModel):
         if rbuild or (emodels is None and not (hasattr(self,'_s_ensemble') or hasattr(self,'_p_ensemble'))):
             if self._config.info and not new:
                 print("[{}] No previous ensemble models stored, building new ones".format(self.name))
-            s_models,p_models,inputs = self._build_ensemble_body(feature,npfile,allocated_gpus,sw_thread)
+            s_models,p_models,inputs = self._build_ensemble_body(npfile,allocated_gpus,sw_thread)
             p_models = list(filter(lambda x: not x is None,p_models))
         elif not emodels is None and (new or not (hasattr(self,'_s_ensemble') and hasattr(self,'_p_ensemble'))):
             #Build from trained models
@@ -245,7 +245,7 @@ class GenericEnsemble(GenericModel):
         
         return s_model,p_model
 
-    def _build_ensemble_body(self,feature,npfile,allocated_gpus,sw_thread=None):
+    def _build_ensemble_body(self,npfile,allocated_gpus,sw_thread=None):
         s_models = []
         p_models = []
         inputs = []
@@ -259,8 +259,7 @@ class GenericEnsemble(GenericModel):
         for m in range(self._config.emodels):
             self.register_ensemble(m)
             model,inp = self._build_architecture(input_shape=input_shape,training=False,
-                                                      feature=feature,preload=False,
-                                                      ensemble=True)
+                                                     preload=False,ensemble=True)
 
             inputs.append(inp)
             
