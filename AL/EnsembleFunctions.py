@@ -267,6 +267,8 @@ def ensemble_bald(pred_model,generator,data_size,**kwargs):
     Avg_Pi = np.divide(score_All, emodels)
     Log_Avg_Pi = np.log2(Avg_Pi)
     Entropy_Avg_Pi = - np.multiply(Avg_Pi, Log_Avg_Pi)
+    #Prevent nan values
+    Entropy_Avg_Pi[np.isnan(Entropy_Avg_Pi)] = 0.0
     Entropy_Average_Pi = np.sum(Entropy_Avg_Pi, axis=1)
 
     G_X = Entropy_Average_Pi

@@ -488,7 +488,7 @@ class Plotter(object):
         if yscale or maxy == 0.0:
             yrg = np.clip(np.arange(max(low,0.0), up + ydelta, ydelta),0.0,1.0)
         else:
-            yrg = np.clip(np.arange(0.55, maxy, ydelta),0.0,1.0)
+            yrg = np.clip(np.arange(0.45, maxy, ydelta),0.0,1.0)
         np.around(yrg,2,yrg)
         plt.yticks(yrg)
         xrg = np.arange(xmin, xmax+xticks, xticks)
