@@ -223,8 +223,6 @@ def bayesian_bald(pred_model,generator,data_size,**kwargs):
         #computing F_X
         dropout_score_log = np.log2(dropout_score)
         Entropy_Compute = - np.multiply(dropout_score, dropout_score_log)
-        #Prevent nan values
-        Entropy_Compute[np.isnan(Entropy_Compute)] = 0.0
         Entropy_Per_Dropout = np.sum(Entropy_Compute, axis=1)
         
         All_Entropy_Dropout = All_Entropy_Dropout + Entropy_Per_Dropout
@@ -243,11 +241,8 @@ def bayesian_bald(pred_model,generator,data_size,**kwargs):
     F_X = Average_Entropy
 
     U_X = G_X - F_X
-
-    # THIS FINDS THE MINIMUM INDEX 
-    # a_1d = U_X.flatten()
-    # x_pool_index = a_1d.argsort()[-Queries:]
-
+    #Prevent nan values
+    U_X[np.isnan(U_X)] = 0.0
     a_1d = U_X.flatten()
     x_pool_index = a_1d.argsort()[-query:][::-1]    
 
