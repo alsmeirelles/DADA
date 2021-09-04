@@ -157,14 +157,17 @@ class Xception(GenericEnsemble):
 
         - weights: one of `None` (random initialization), 'imagenet' (pre-training on ImageNet),
               or the path to the weights file to be loaded.
+        - use_dp: use Dropout
+        - pooling: final pooling type ('avg','max')
+        - include_top: include top layers in model
         OBS: self.is_ensemble() returns if the ensemble strategy is in use
         """
-        batch_n = True if self._config.gpu_count <= 1 else False
-        use_dp = True #False if self.is_ensemble() else True
-        pooling = 'avg'
-        include_top = True
-        classes = self._ds.nclasses
         weights = kwargs.get('weights',None)
+        use_dp = kwargs.get('use_dp',True) #False if self.is_ensemble() else True
+        pooling = kwargs.get('pooling','avg')
+        include_top = kwargs.get('include_top',True)
+        classes = self._ds.nclasses
+        batch_n = True if self._config.gpu_count <= 1 else False
         depth = round(self.rescale('depth',36))+2 #13 feature layers, keep the first tree always
         channel_axis = 1 if backend.image_data_format() == 'channels_first' else -1
         
@@ -206,6 +209,10 @@ class Xception(GenericEnsemble):
         x = layers.BatchNormalization(axis=channel_axis, name='block1_conv2_bn')(x)
         x = layers.Activation('relu', name='block1_conv2_act')(x)
 
+        #Needed for bayesian version
+        if use_dp or training:
+            x = layers.Dropout(0.1)(x,training=training)        
+
         residual = layers.Conv2D(filters.get(128,128), (1, 1),
                                 strides=(2, 2),
                                 padding='same',
@@ -218,6 +225,10 @@ class Xception(GenericEnsemble):
                                 name='block2_sepconv1')(x)
         x = layers.BatchNormalization(axis=channel_axis, name='block2_sepconv1_bn')(x)
         x = layers.Activation('relu', name='block2_sepconv2_act')(x)
+        
+        if use_dp or training:
+            x = layers.Dropout(0.1)(x,training=training)
+            
         x = layers.SeparableConv2D(filters.get(128,128), (3, 3),
                                 padding='same',
                                 use_bias=False,
@@ -241,6 +252,9 @@ class Xception(GenericEnsemble):
                                 name='block3_sepconv1')(x)
         x = layers.BatchNormalization(axis=channel_axis, name='block3_sepconv1_bn')(x)
         x = layers.Activation('relu', name='block3_sepconv2_act')(x)
+        if use_dp or training:
+            x = layers.Dropout(0.1)(x,training=training)
+            
         x = layers.SeparableConv2D(filters.get(256,256), (3, 3),
                                 padding='same',
                                 use_bias=False,
@@ -265,6 +279,9 @@ class Xception(GenericEnsemble):
                                 name='block4_sepconv1')(x)
         x = layers.BatchNormalization(axis=channel_axis, name='block4_sepconv1_bn')(x)
         x = layers.Activation('relu', name='block4_sepconv2_act')(x)
+        if use_dp or training:
+            x = layers.Dropout(0.1)(x,training=training)
+            
         x = layers.SeparableConv2D(filters.get(728,728), (3, 3),
                                 padding='same',
                                 use_bias=False,
@@ -301,6 +318,8 @@ class Xception(GenericEnsemble):
                                     name=prefix + '_sepconv3')(x)
             x = layers.BatchNormalization(axis=channel_axis,
                                         name=prefix + '_sepconv3_bn')(x)
+            if use_dp or training:
+                x = layers.Dropout(0.1)(x,training=training)
             
             x = layers.add([x, residual])
 
@@ -315,6 +334,8 @@ class Xception(GenericEnsemble):
                                 name='block13_sepconv1')(x)
         x = layers.BatchNormalization(axis=channel_axis, name='block13_sepconv1_bn')(x)
         x = layers.Activation('relu', name='block13_sepconv2_act')(x)
+        if use_dp or training:
+                x = layers.Dropout(0.1)(x,training=training)
         x = layers.SeparableConv2D(filters.get(1024,1024), (3, 3),
                                 padding='same',
                                 use_bias=False,
@@ -332,6 +353,8 @@ class Xception(GenericEnsemble):
                                 use_bias=False,
                                 name='block14_sepconv1')(x)
         x = layers.BatchNormalization(axis=channel_axis, name='block14_sepconv1_bn')(x)
+        if use_dp or training:
+                x = layers.Dropout(0.1)(x,training=training)
         x = layers.Activation('relu', name='block14_sepconv1_act')(x)
 
         x = layers.SeparableConv2D(filters.get(2048,2048), (3, 3),
