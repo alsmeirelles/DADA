@@ -222,13 +222,17 @@ def _acq_ng_logic(posa,clusters,un_clusters,query,config,verbose,cache_m):
         else:
             l = len(q)
             acquired.extend(q[first:l])
-            ac_count += l-first
+            a = l-first
+            ac_count += a
             sel[cln] = l
             np.random.seed(n*(n+1))
-            r = np.random.randint(0,clusters)
-            n = r if r != n else n+1
+            if a == 0:
+                n += 1
+            else:
+                r = np.random.randint(0,clusters)
+                n = r if r != n else n+1
             if verbose > 0:
-                print("[km_uncert] Cluster {} exausted, all {} patches acquired. Will try to acquire remaining patches from cluster {}".format(cln,l-first,(n)%clusters))
+                print("[km_uncert] Cluster {} exausted, all {} patches acquired. Will try to acquire remaining patches from cluster {}".format(cln,a,(n)%clusters))
     acquired = np.asarray(acquired[:query],dtype=np.int32)
     if config.recluster > 0:
         cache_m.dump((km,acquired),'clusters.pik')
