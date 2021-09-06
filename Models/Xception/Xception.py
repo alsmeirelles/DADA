@@ -146,7 +146,6 @@ class Xception(GenericEnsemble):
         return (model,parallel_model)
 
     def _build_architecture(self,input_shape,training=None,preload=True,ensemble=False,**kwargs):
-
         """
         Parameters:
         - training <boolean>: sets network to training mode, wich enables dropout if there are DP layers
@@ -168,12 +167,11 @@ class Xception(GenericEnsemble):
         include_top = kwargs.get('include_top',True)
         classes = self._ds.nclasses
         batch_n = True if self._config.gpu_count <= 1 else False
-        depth = round(self.rescale('depth',36))+2 #13 feature layers, keep the first tree always
         channel_axis = 1 if backend.image_data_format() == 'channels_first' else -1
         
         # Determine proper input shape
         if input_shape is None:
-            input_shape = (299,299,3)        
+            input_shape = (299,299,3)
 
         if not (weights in {'imagenet', None} or os.path.exists(weights)):
             raise ValueError('The `weights` argument should be either '

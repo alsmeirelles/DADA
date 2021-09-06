@@ -1400,7 +1400,8 @@ class Plotter(object):
             slurm_path = os.path.join(path,dir_contents[-1])
             with open(slurm_path,'r') as fd:
                 lines = fd.readlines()
-            
+
+        print("Experiment {} ({}):".format(os.path.basename(path),os.path.basename(slurm_path)))
         data = {'time':[],
                 'acqtime':[],
                 'traintime':[],
@@ -1605,7 +1606,6 @@ class Plotter(object):
         #Round AUC to 2 decimal places
         np.around(data['auc'],2,data['auc'])
 
-        print("Experiment {} ({}):".format(os.path.basename(path),os.path.basename(slurm_path)))
         if data['auc'].shape[0] > 0:
             print("X: {}; AUC: {}".format(data['trainset'],data['auc']))
             print("Min AUC: {0}; Max AUC: {1}; Mean AUC: {2:.3f}\n".format(data['auc'].min(),data['auc'].max(),data['auc'].mean()))
