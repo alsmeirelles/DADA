@@ -301,7 +301,7 @@ class Plotter(object):
                 self._nX = x_data
                 tset = x_data
             else:
-                if len(self._nX) != len(x_data):
+                if len(self._nX) != len(x_data) and not merge:
                     self._yIDX = np.in1d(x_data,self._nX)
                     tset = x_data[self._yIDX]
                     if len(tdata) < len(self._yIDX):

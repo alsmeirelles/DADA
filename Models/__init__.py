@@ -10,4 +10,4 @@ from .EKNet import BayesEKNet
 from .InceptionV4 import Inception,EFInception
 from .ALTransf import SmallNet
 from .Xception import Xception
-from .ResNet import ResNet50,ResNet101
+from .ResNet import ResNet50,ResNet101,ResNet50V2

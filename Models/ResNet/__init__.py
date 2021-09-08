@@ -3,6 +3,6 @@
 
 __all__ = ['Xception']
 
-from .ResNet import ResNet50
+from .ResNet import ResNet50,ResNet50V2
 from .ResNet import ResNet101
 

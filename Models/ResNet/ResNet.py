@@ -115,6 +115,78 @@ def stack1(x, filters, blocks, stride1=2, use_dp=True, training=None,name=None):
         x = block1(x, filters, conv_shortcut=False, use_dp=use_dp, training=training, name=name + '_block' + str(i))
     return x
 
+
+def block2(x, filters, kernel_size=3, stride=1,
+           conv_shortcut=False, use_dp=True, training=None,name=None):
+    """A residual block.
+
+    # Arguments
+        x: input tensor.
+        filters: integer, filters of the bottleneck layer.
+        kernel_size: default 3, kernel size of the bottleneck layer.
+        stride: default 1, stride of the first layer.
+        conv_shortcut: default False, use convolution shortcut if True,
+            otherwise identity shortcut.
+        name: string, block label.
+
+    # Returns
+        Output tensor for the residual block.
+    """
+    bn_axis = 3 if backend.image_data_format() == 'channels_last' else 1
+
+    preact = layers.BatchNormalization(axis=bn_axis, epsilon=1.001e-5,
+                                       name=name + '_preact_bn')(x)
+    preact = layers.Activation('relu', name=name + '_preact_relu')(preact)
+
+    if conv_shortcut is True:
+        shortcut = layers.Conv2D(4 * filters, 1, strides=stride,
+                                 name=name + '_0_conv')(preact)
+    else:
+        shortcut = layers.MaxPooling2D(1, strides=stride)(x) if stride > 1 else x
+
+    x = layers.Conv2D(filters, 1, strides=1, use_bias=False,
+                      name=name + '_1_conv')(preact)
+    x = layers.BatchNormalization(axis=bn_axis, epsilon=1.001e-5,
+                                  name=name + '_1_bn')(x)
+    x = layers.Activation('relu', name=name + '_1_relu')(x)
+
+    if use_dp or training:
+        x = layers.Dropout(0.1)(x,training=training)    
+
+    x = layers.ZeroPadding2D(padding=((1, 1), (1, 1)), name=name + '_2_pad')(x)
+    x = layers.Conv2D(filters, kernel_size, strides=stride,
+                      use_bias=False, name=name + '_2_conv')(x)
+    x = layers.BatchNormalization(axis=bn_axis, epsilon=1.001e-5,
+                                  name=name + '_2_bn')(x)
+    x = layers.Activation('relu', name=name + '_2_relu')(x)
+
+    if use_dp or training:
+        x = layers.Dropout(0.1)(x,training=training)    
+
+    x = layers.Conv2D(4 * filters, 1, name=name + '_3_conv')(x)
+    x = layers.Add(name=name + '_out')([shortcut, x])
+    return x
+
+
+def stack2(x, filters, blocks, stride1=2, use_dp=True, training=None, name=None):
+    """A set of stacked residual blocks.
+
+    # Arguments
+        x: input tensor.
+        filters: integer, filters of the bottleneck layer in a block.
+        blocks: integer, blocks in the stacked blocks.
+        stride1: default 2, stride of the first layer in the first block.
+        name: string, stack label.
+
+    # Returns
+        Output tensor for the stacked blocks.
+    """
+    x = block2(x, filters, conv_shortcut=True, use_dp=use_dp, training=training,name=name + '_block1')
+    for i in range(2, blocks):
+        x = block2(x, filters, use_dp=use_dp, training=training,name=name + '_block' + str(i))
+    x = block2(x, filters, stride=stride1, use_dp=use_dp, training=training, name=name + '_block' + str(blocks))
+    return x
+
 class ResNet50(GenericEnsemble):
     """
     Instantiates a ResNet50 model:
@@ -386,3 +458,52 @@ class ResNet101(ResNet50):
         x = stack1(x, filters.get(512,512), self.rescale('depth',3), use_dp=use_dp, training=training, name='conv5')
         return x
 
+
+class ResNet50V2(ResNet50):
+    """
+    Instantiates a ResNet 101 model
+
+    Reference: Deep residual learning for image recognition (CVPR - 2016)
+    """
+    
+    def __init__(self,config,ds,name=None):
+        super().__init__(config,ds,name=name)
+        if name is None:
+            self.name = "ResNet50"        
+
+        self._modelCache = "{0}-model.h5".format(self.name)
+        self._weightsCache = "{0}-weights.h5".format(self.name)
+        self._mgpu_weightsCache = "{0}-mgpu-weights.h5".format(self.name)
+        self.cache_m = CacheManager()
+        self.cache_m.registerFile(os.path.join(config.model_path,self._modelCache),self._modelCache)
+        self.cache_m.registerFile(os.path.join(config.weights_path,self._weightsCache),self._weightsCache)
+        self.cache_m.registerFile(os.path.join(config.weights_path,self._mgpu_weightsCache),self._mgpu_weightsCache)
+
+    def _stack_fn(self,x,filters,use_dp,training):
+        x = stack2(x, filters.get(64,64), self.rescale('depth',3), stride1=1, use_dp=use_dp, training=training, name='conv2')
+        x = stack2(x, filters.get(128,128), self.rescale('depth',4), use_dp=use_dp, training=training, name='conv3')
+        x = stack2(x, filters.get(256,256), self.rescale('depth',6), use_dp=use_dp, training=training, name='conv4')
+        x = stack2(x, filters.get(512,512), self.rescale('depth',3), use_dp=use_dp, training=training, name='conv5')
+        return x    
+
+    def _build_architecture(self,input_shape,training=None,preload=True,ensemble=False,**kwargs):    
+        """
+        Parameters:
+        - training <boolean>: sets network to training mode, wich enables dropout if there are DP layers
+        - preload <boolean>: preload Imagenet weights
+        - ensemble <boolean>: builds an ensemble of networks from the Inception architecture
+
+        KWARGS:
+        - preact: whether to use pre-activation or not (True for ResNetV2, False for ResNet and ResNeXt).
+        - weights: one of `None` (random initialization), 'imagenet' (pre-training on ImageNet),
+              or the path to the weights file to be loaded.
+        - use_dp: use Dropout
+        - pooling: final pooling type ('avg','max')
+        - include_top: include top layers in model
+        - use_bias: whether to use biases for convolutional layers or not
+            (True for ResNet and ResNetV2, False for ResNeXt).
+        OBS: self.is_ensemble() returns if the ensemble strategy is in use
+        """
+        kwargs['preact'] = True
+        kwargs['use_bias'] = True
+        return self._basic_resnet(input_shape,training,preload,ensemble,**kwargs)    
