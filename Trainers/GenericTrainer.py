@@ -79,17 +79,18 @@ class Trainer(object):
         self._config = config
         self._verbose = config.verbose
         self._ds = None
-        self._rex = r'{0}-t(?P<try>[0-9]+)e(?P<epoch>[0-9]+).h5'
         self.min_epochs = config.epochs
         
-    def load_modules(self,net_name = None):
+    def load_modules(self,net_name = None, ds = None):
         if net_name is None:
             net_name = self._config.network
         if net_name is None or net_name == '':
             print("A network should be specified")
             return Exitcodes.RUNTIME_ERROR
 
-        if self._config.data:
+        if not ds is None:
+            self._ds = ds
+        elif self._config.data:
             dsm = importlib.import_module('Datasources',self._config.data)
             self._ds = getattr(dsm,self._config.data)(self._config.predst,self._config.keepimg,self._config)
         else:
@@ -211,7 +212,6 @@ class Trainer(object):
         @param allocated_gpus <int>: currently not used
         @param save_numpy <boolean>: save weights in numpy format instead of HDF5
         """
-        rcomp = re.compile(self._rex)
 
         if 'set_session' in kwargs:
             set_session = kwargs['set_session']
@@ -292,28 +292,7 @@ class Trainer(object):
         weights.sort()
         old_e_offset = 0
         if len(weights) > 0 and not self._config.new_net:
-            # get last file (which is the furthest on the training) if exists
-            ep_weights_file = weights[len(weights)-2]
-            match = rcomp.fullmatch(ep_weights_file)
-            if match:
-                old_e_offset = int(match.group('epoch'))
-            else:
-                old_e_offset = 0
-            # load weights
-            try:
-                single.load_weights(os.path.join(self._config.weights_path,
-                    ep_weights_file))
-                if self._verbose > 0:
-                    print("Sucessfully loaded previous weights: {0}".format(ep_weights_file))
-            except ValueError:
-                single.load_weights(os.path.join(self._config.weights_path,"{0}-weights.h5".format(model.name)))
-                if self._verbose > 0:
-                    print("Sucessfully loaded previous weights from consolidated file.")
-            except (ValueError,OSError) as e:
-                print("[ALERT] Could not load previous weights, training from scratch")
-                if self._verbose > 1:
-                    print(e)
-                
+            print("[GenericTrainer] Intermediary weight load disabled, will train from scratch")
         wf_header = "{0}-t{1}".format(model.name,old_e_offset+1)
 
         ### Define special behaviour CALLBACKS
@@ -357,7 +336,7 @@ class Trainer(object):
         if self._verbose > 1:
             print("Done training model: {0}".format(hex(id(training_model))))
 
-        if self._config.dye:
+        if hasattr(self._config,'dye') and self._config.dye:
             epad = ((np.mean(hist.history['loss']) - hist.history['loss'][-1]) + (np.mean(hist.history['acc']) - hist.history['acc'][-1]))/ \
             (np.std(hist.history['loss'])+np.std(hist.history['acc']))
             dloss = np.subtract(hist.history['val_loss'],hist.history['loss'])
@@ -366,7 +345,6 @@ class Trainer(object):
             macc = np.mean(hist.history['acc'][-3:])
             mhloss = np.mean(dloss[2*int(len(dloss)/3):])
             sign = -1.0 if ((mhloss > 1.1*(lmean+ldloss)) or macc >= 0.995)  else 1.0
-            print(dloss)
             print("Cut point: {}; High band MEAN: {}".format(1.1*(lmean+ldloss),mhloss))
             epad = sign*abs(epad)
             if epad < -1.0:
