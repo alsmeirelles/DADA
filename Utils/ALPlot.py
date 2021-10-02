@@ -29,13 +29,19 @@ font = {'family' : 'DejaVu Sans',
 mpl.rc('font',**font)
 
 palette = plt.get_cmap('Dark2')
-newcolors = np.ones((6,4))
-newcolors[0,0:3] = np.array([29/256,39/256,125/256])
-newcolors[1,0:3] = np.array([110/256,29/256,5/256])
-newcolors[2,0:3] = np.array([0/256,5/256,105/256])
-newcolors[3,0:3] = np.array([159/256,32/256,54/256])
-newcolors[4,0:3] = np.array([76/256,0/256,153/256])
-newcolors[5,0:3] = np.array([0.0,0.0,0.0])
+newcolors = np.ones((12,4))
+newcolors[0,0:3] = np.array([29/256,39/256,125/256]) #8
+newcolors[1,0:3] = np.array([110/256,29/256,5/256]) #9
+newcolors[2,0:3] = np.array([0/256,44/256,163/256]) #10
+newcolors[3,0:3] = np.array([0/256,5/256,105/256]) #11
+newcolors[4,0:3] = np.array([159/256,32/256,54/256]) #12
+newcolors[5,0:3] = np.array([76/256,0/256,153/256]) #13
+newcolors[6,0:3] = np.array([0.0,0.0,0.0]) #14
+newcolors[7,0:3] = np.array([135/256,92/256,116/256]) #15
+newcolors[8,0:3] = np.array([81/256,60/256,44/256]) #16
+newcolors[9,0:3] = np.array([224/256,44/256,41/256]) #17
+newcolors[10,0:3] = np.array([146/256,38/256,115/256]) #18
+newcolors[11,0:3] = np.array([176/256,108/256,75/256]) #19
 newcolors = np.vstack((palette(np.linspace(0,1,len(palette.colors))),
                            newcolors))
    
@@ -68,7 +74,7 @@ lang = 'pt'
 
 class Plotter(object):
 
-    def __init__(self,data=None, path=None):
+    def __init__(self,data=None, path=None, ncols=2):
         if not path is None and os.path.isdir(path):
             self.path = path
         else:
@@ -76,6 +82,7 @@ class Plotter(object):
 
         self._nX = None
         self._yIDX = None
+        self._ncols = ncols
 
     def draw_uncertainty(self,data,xticks,spread=1,title='',subfig=False,sub_acq=None):
         """
@@ -145,7 +152,7 @@ class Plotter(object):
             labels = ['Uns. patches','Sel. patches','Sel. mean','Uns. mean']
         else:
             labels = ['Patches NS','Patches Sel.','Média Sel.','Média NS']
-        ncol = 1 if subfig else 2
+        ncol = 1 if subfig else self._ncols
         ax.legend(plots,labels=labels,loc=2,ncol=ncol,prop=dict(weight='bold'),fontsize=14)
         ax.set_xticks(xticks)
         ax.set_yticks(np.arange(0.0, maxu+0.1, 0.05))
@@ -242,7 +249,7 @@ class Plotter(object):
         plt.grid(True)
         plt.show()
 
-    def draw_time_stats(self,data,xticks,auc_only,metrics,labels=None,spread=1,title='',colors=None,yscale=False,maxy=0.0,merge=False):
+    def draw_time_stats(self,data,xticks,auc_only,metrics,labels=None,spread=1,title='',colors=None,yscale=False,maxy=0.0,miny=0.0,merge=False):
         """
         @param data <list>: a list as returned by calculate_stats
         """
@@ -358,7 +365,7 @@ class Plotter(object):
             ax.yaxis.set_major_formatter(formatter)
 
         if not metrics is None:
-            plt.legend(handles=metric_patches,loc=2,ncol=2,prop=dict(weight='bold'))
+            plt.legend(handles=metric_patches,loc=2,ncol=self._ncols,prop=dict(weight='bold'))
         else:
             plt.legend(loc=0,ncol=2,labels=config.labels,prop=dict(weight='bold'))
             
@@ -418,7 +425,7 @@ class Plotter(object):
         plt.tight_layout()
         plt.show()            
             
-    def draw_stats(self,data,xticks,auc_only,labels=None,spread=1,title='',colors=None,yscale=False,maxy=0.0):
+    def draw_stats(self,data,xticks,auc_only,labels=None,spread=1,title='',colors=None,yscale=False,maxy=0.0,miny=0.0):
         """
         @param data <list>: a list as returned by calculate_stats
         """
@@ -482,13 +489,13 @@ class Plotter(object):
             plt.ylabel(y_label)
                 
         # Label the axes and provide a title
-        plt.legend(plots,labels=labels,loc=0,ncol=2,prop=dict(weight='bold'))
+        plt.legend(plots,labels=labels,loc=0,ncol=self._ncols,prop=dict(weight='bold'))
         #ydelta = (1.0 - low)/10
-        ydelta = 0.05
-        if yscale or maxy == 0.0:
+        ydelta = 0.1
+        if yscale or (maxy == 0.0 and miny == 0.0):
             yrg = np.clip(np.arange(max(low,0.0), up + ydelta, ydelta),0.0,1.0)
         else:
-            yrg = np.clip(np.arange(0.45, maxy, ydelta),0.0,1.0)
+            yrg = np.clip(np.arange(miny, maxy, ydelta),0.0,1.0)
         np.around(yrg,2,yrg)
         plt.yticks(yrg)
         xrg = np.arange(xmin, xmax+xticks, xticks)
@@ -614,7 +621,7 @@ class Plotter(object):
             
         formatter = FuncFormatter(self.format_func)
         ax.yaxis.set_major_formatter(formatter)
-        plt.legend(handles=metric_patches,loc=2,ncol=2,prop=dict(weight='bold'))
+        plt.legend(handles=metric_patches,loc=2,ncol=self._ncols,prop=dict(weight='bold'))
         ax.set_xticks(np.arange(data['trainset'].min(), data['trainset'].max()+1, xtick))
         if data['trainset'].max() > 1000:
             plt.setp(ax.get_xticklabels(),rotation=30)
@@ -739,7 +746,7 @@ class Plotter(object):
                     
                 color += 1
 
-        fig.legend(bbox_to_anchor=(0.15,0.9),loc=2,ncol=2,labels=config.labels,prop=dict(weight='bold'))
+        fig.legend(bbox_to_anchor=(0.15,0.9),loc=2,ncol=self._ncols,labels=config.labels,prop=dict(weight='bold'))
         if 'fntrainset' in data:
             lx = min(data['trainset'].min(),data['fntrainset'].min())
             mx = max(data['trainset'].max(),data['fntrainset'].max())
@@ -910,7 +917,7 @@ class Plotter(object):
             if multi_label:
                 lines2,labels2 = ax2.get_legend_handles_labels()
                 lines += lines2
-            ax1.legend(lines,labels,loc=0,ncol=2,prop=dict(weight='bold'),columnspacing=0.7)
+            ax1.legend(lines,labels,loc=0,ncol=self._ncols,prop=dict(weight='bold'),columnspacing=0.7)
 
         ax1.set_xticks(np.arange(min_x, max_x+1,xtick))
         if max_x > 1000:
@@ -937,7 +944,7 @@ class Plotter(object):
         maxy=kwargs.get('maxy',0.0)
         scale=kwargs.get('scale',True)
         merge=kwargs.get('merge',False)
-        
+
         color = 0
         hatch_color = 'white'
         line = 0
@@ -1129,9 +1136,9 @@ class Plotter(object):
 
 
         if not other is None:
-            plt.legend(handles=metric_patches,loc=2,ncol=2,prop=dict(weight='bold'))
+            plt.legend(handles=metric_patches,loc=2,ncol=self._ncols,prop=dict(weight='bold'))
         else:
-            plt.legend(loc=0,ncol=3,labels=config.labels,prop=dict(weight='bold'))
+            plt.legend(loc=0,ncol=self._ncols,labels=config.labels,prop=dict(weight='bold'))
             
         if max(max_x) > 1000:
             plt.xticks(rotation=30)
@@ -1238,10 +1245,11 @@ class Plotter(object):
                 else:
                     d_path = "{0}-{1}".format(path,al_dirs[d])
                 if os.path.isdir(d_path):
+                    exp = os.path.basename(d_path)
                     if wsi:
-                        data[al_dirs[d]] = self.compileWSIData(d_path,maxx=maxx,concat=concat,ncf=ncf)
+                        data[exp] = self.compileWSIData(d_path,maxx=maxx,concat=concat,ncf=ncf)
                     else:
-                        data[al_dirs[d]] = self.parseSlurm(d_path,maxx=maxx,concat=concat)
+                        data[exp] = self.parseSlurm(d_path,maxx=maxx,concat=concat)
                 else:
                     print("Results dir not found: {}".format(d_path))
             return data
@@ -1921,9 +1929,13 @@ if __name__ == "__main__":
         help='xtick interval.', default=200,required=False)
     parser.add_argument('-ytick', dest='ytick', type=int, 
         help='ytick interval.', default=200,required=False)
+    parser.add_argument('-ncols', dest='ncols', type=int, 
+        help='# of columns in label box.', default=2,required=False)
     parser.add_argument('-maxx', dest='maxx', type=int, 
         help='Plot maximum X.', default=None,required=False)
     parser.add_argument('-maxy', dest='maxy', type=float, 
+        help='Plot maximum Y.', default=0.0,required=False)
+    parser.add_argument('-miny', dest='miny', type=float, 
         help='Plot maximum Y.', default=0.0,required=False)
     parser.add_argument('-t', dest='title', type=str,default='', 
         help='Figure title.')
@@ -2038,7 +2050,7 @@ if __name__ == "__main__":
         else:
             exp_type = [os.path.join(config.sdir,tmode,tmode) for tmode in config.tmode]
             
-        p = Plotter()
+        p = Plotter(ncols=config.ncols)
 
         if not config.metrics is None and len(config.ids) == 1:
             ex_dir = "{}-{}".format(exp_type,str(config.ids[0]))
@@ -2050,25 +2062,25 @@ if __name__ == "__main__":
                 print("Something is wrong with your command options. No data to plot")
                 sys.exit(1)
             kwargs = {'labels':config.labels,'pos':config.pos,'auc':config.auc_only,'other':config.metrics,'colors':config.colors,
-                          'maxy':config.maxy,'scale':config.yscale,'merge':config.merge}
+                          'maxy':config.maxy,'miny':config.miny,'scale':config.yscale,'merge':config.merge}
             p.draw_multiline(data,config.title,config.xtick,**kwargs)
                 
     elif config.single:
-        p = Plotter(path=config.sdir)
+        p = Plotter(path=config.sdir,ncols=config.ncols)
         if not config.metrics is None:
             p.draw_data(p.parseSlurm(),config.title,metric=config.metrics[0],color=config.colors[0])
         else:
             p.draw_data(p.parseSlurm(),config.title,color=config.colors[0])
 
     elif config.mtime:
-        p = Plotter(path=config.sdir)
+        p = Plotter(path=config.sdir,ncols=config.ncols)
         if not config.metrics is None:
             p.draw_multitime(p.parseSlurm(),config.title,config.xtick,metrics=config.metrics,colors=config.colors,labels=config.labels)
         else:
             p.draw_data(p.parseSlurm(),config.title,color=config.colors[0])
             
     elif config.unc:
-        p = Plotter()
+        p = Plotter(ncols=config.ncols)
 
         if config.sdir is None:
             print("You should specify an experiment directory (use -sd option).")
@@ -2082,13 +2094,16 @@ if __name__ == "__main__":
         p.draw_uncertainty(data,config.ac_n,config.spread,config.title,config.kmu,config.plt_cluster)
 
     elif config.stats:
-        p = Plotter()
+        p = Plotter(ncols=config.ncols)
         if config.sdir is None:
             print("You should specify an experiment directory (use -sd option).")
             sys.exit(1)
 
         if len(config.tmode) == 1:
             exp_type = os.path.join(config.sdir,config.tmode[0],config.tmode[0])
+        elif len(config.tmode) != len(config.n_exp):
+            print("Experiment types and sizes mismatch")
+            sys.exit(1)
         else:
             exp_type = []
             for i in range(len(config.n_exp)):
@@ -2102,7 +2117,7 @@ if __name__ == "__main__":
         dup = u[c>1]
         if np.any(dup):
             print("Your are using duplicated IDs, change these: {}".format(dup))
-            sys.exit()
+            #sys.exit()
                 
         data = p.parseResults(exp_type,config.ids,config.n_exp,config.maxx,config.concat)
         
@@ -2121,10 +2136,11 @@ if __name__ == "__main__":
                 i = config.n_exp[z]
                 if i > 0:
                     print("\n***Calculating statistics for experiments {}".format(config.ids[idx:idx+i]))
+                    tm = config.tmode[z]
                     if config.auc_only:
-                        c.extend(p.calculate_stats({k:data[k] for k in config.ids[idx:idx+i]},config.auc_only,config.confidence,config.metrics))
+                        c.extend(p.calculate_stats({f"{tm}-{k}":data[f"{tm}-{k}"] for k in config.ids[idx:idx+i]},config.auc_only,config.confidence,config.metrics))
                     else:
-                        d[z] = p.calculate_stats({k:data[k] for k in config.ids[idx:idx+i]},config.auc_only,config.confidence,config.metrics)
+                        d[z] = p.calculate_stats({f"{tm}-{k}":data[f"{tm}-{k}"] for k in config.ids[idx:idx+i]},config.auc_only,config.confidence,config.metrics)
                     idx += i
             if config.auc_only:
                 data = c
@@ -2138,10 +2154,10 @@ if __name__ == "__main__":
             sys.exit(1)
 
         if config.auc_only:
-            p.draw_stats(data,config.xtick,config.auc_only,config.labels,config.spread,config.title,config.colors,yscale=config.yscale,maxy=config.maxy)
+            p.draw_stats(data,config.xtick,config.auc_only,config.labels,config.spread,config.title,config.colors,yscale=config.yscale,maxy=config.maxy,miny=config.miny)
         else:
             p.draw_time_stats(data,config.xtick,config.auc_only,config.metrics,config.labels,config.spread,
-                                  config.title,config.colors,yscale=config.yscale,maxy=config.maxy,merge=config.merge)
+                                  config.title,config.colors,yscale=config.yscale,maxy=config.maxy,miny=config.miny,merge=config.merge)
 
     elif config.debug:
 
@@ -2149,7 +2165,7 @@ if __name__ == "__main__":
             print("Results dir path is needed (-sd option)")
             sys.exit(1)
 
-        p = Plotter(path=config.sdir)
+        p = Plotter(path=config.sdir,ncols=config.ncols)
         data = {}
         if config.meta and config.clusters:
             full_data = p.retrieveUncertainty(config)
@@ -2201,7 +2217,7 @@ if __name__ == "__main__":
         else:
             exp_type = [os.path.join(config.sdir,tmode,tmode) for tmode in config.tmode]
             
-        p = Plotter()
+        p = Plotter(ncols=config.ncols)
 
         data = p.parseResults(exp_type,config.ids,config.n_exp,config.maxx,config.concat,wsi=True,ncf=config.ncf)
 
