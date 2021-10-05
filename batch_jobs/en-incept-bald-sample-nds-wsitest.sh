@@ -9,7 +9,7 @@
 #echo commands to stdout
 #set -x
 
-DIRID="DB-24"
+DIRID="EN/EN-239"
 cd /ocean/projects/asc130006p/alsm/active-learning/Segframe
 
 echo '[VIRTUALENV]'
@@ -22,9 +22,9 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/ocean/projects/asc130006p/alsm/venv/lib
 echo '[START] training'
 date +"%D %T"
 
-time python3 main.py -i -v --al -strategy EnsembleTrainer -predst /ocean/projects/asc130006p/alsm/active-learning/data/nds300 -split 0.90 0.01 0.09 -net EFInception -data CellRep -init_train 500 -ac_steps 2 -emodels 3 -ac_function ensemble_bald -acquire 200 -d -e 50 -b 62 -tdim 240 240 -f1 30 -out logs/ -cpu 6 -gpu 1 -tn -sv -nsw -wpath results/$DIRID -model_dir results/$DIRID -logdir results/$DIRID -cache results/$DIRID -sample 100000 -load_train -wsi_split 5 -pred_size 15000 -phi 2 -tnphi 2 -lr 0.0001 -k
+time python3 main.py -i -v --al -strategy EnsembleTrainer -predst /ocean/projects/asc130006p/alsm/active-learning/data/nds300 -split 0.90 0.01 0.09 -net EFInception -data CellRep -init_train 500 -ac_steps 20 -emodels 3 -ac_function ensemble_bald -acquire 200 -d -e 50 -b 62 -tdim 240 240 -f1 30 -out logs/ -cpu 6 -gpu 1 -tn -sv -nsw -wpath results/$DIRID -model_dir results/$DIRID -logdir results/$DIRID -cache results/$DIRID -sample 100000 -load_train -wsi_split 5 -pred_size 15000 -phi 1 -lr 0.0001 -k
 
-#-tnet EFInception -tnpred 2
+#-tnet EFInception -tnpred 2 -tnphi 2
 
 echo '[FINAL] done training'
 
