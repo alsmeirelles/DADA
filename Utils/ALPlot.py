@@ -942,6 +942,7 @@ class Plotter(object):
         other=kwargs.get('other',None)
         colors=kwargs.get('colors',None)
         maxy=kwargs.get('maxy',0.0)
+        miny=kwargs.get('miny',0.0)
         scale=kwargs.get('scale',True)
         merge=kwargs.get('merge',False)
 
@@ -1014,6 +1015,22 @@ class Plotter(object):
 
                 plt.plot(data[k]['trainset'],data[k]['auc'], marker=markers[marker],color=palette(color),
                              linewidth=2.3,linestyle=linestyle[line][1],alpha=0.9,label=lb,markersize=10)
+                if merge and data[k]['fnauc'].shape[0] > 0:
+                    if metric_patches is None:
+                        metric_patches = []
+                    fcolor = np.asarray(palette(color))
+                    fcolor[:3,] *= 0.7
+                    mcolor = np.clip(fcolor,0.0,1.0)
+                    plt.plot(data[k]['fntrainset'],data[k]['fnauc'], marker=markers[marker],color=mcolor,
+                             linewidth=2.0,linestyle=linestyle[line][1],alpha=1.0,label=f"{lb}-FN",markersize=8)
+                    metric_patches.append(mpatches.Patch(facecolor=palette(color),label=lb,edgecolor=hatch_color))
+                    metric_patches.append(mpatches.Patch(facecolor=mcolor,label=f"{lb}-FN",edgecolor=hatch_color))
+                    min_x.append(data[k]['fntrainset'].min())
+                    max_x.append(data[k]['fntrainset'].max())
+                    min_y.append(data[k]['fnauc'].min())
+                    max_y.append(data[k]['fnauc'].max())                    
+                    print("Feature network evaluations: {}; - FNAUC: {}".format(data[k]['fntrainset'],data[k]['fnauc']))
+                    
                 plotAUC = True
                 min_x.append(data[k]['trainset'].min())
                 max_x.append(data[k]['trainset'].max())
@@ -1135,8 +1152,8 @@ class Plotter(object):
             marker = color%len(markers)
 
 
-        if not other is None:
-            plt.legend(handles=metric_patches,loc=2,ncol=self._ncols,prop=dict(weight='bold'))
+        if not other is None or merge:
+            plt.legend(handles=metric_patches,loc=0,ncol=self._ncols,prop=dict(weight='bold'))
         else:
             plt.legend(loc=0,ncol=self._ncols,labels=config.labels,prop=dict(weight='bold'))
             
@@ -1164,8 +1181,11 @@ class Plotter(object):
             axis_t.extend([ticks.min(),ticks.max()])
             plt.yticks(ticks)
         else:
-            if scale or maxy == 0.0:
+            if scale or (maxy and miny) == 0.0:
                 ticks = np.linspace(min(0.6,0.9*min(min_y)), min(max(max_y)+0.1,1.0), 8)
+                np.round(ticks,2,ticks)
+            elif not scale and maxy > 0.0:
+                ticks = np.arange(miny,maxy,0.1)
                 np.round(ticks,2,ticks)
             else:
                 ticks = np.arange(0.55,maxy,0.05)
