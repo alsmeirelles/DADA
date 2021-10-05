@@ -278,9 +278,13 @@ if __name__ == "__main__":
         print("*************\nStart base model training\n*************\n")
         #Configurations and loading
         #config.new_net = True
-        data = load_metadata(config,ds)
-        if config.save_dt:
-            cache_m.dump(data,'{0}-{1}-un_metadata.pik'.format(config.data,os.path.basename(config.predst)))
+        if cache_m.checkFileExistence('un_metadata.pik'):
+            data = cache_m.load('un_metadata.pik')
+            print("Loaded data already cached ({})".format(cache_m.fileLocation('un_metadata.pik')))
+        else:
+            data = load_metadata(config,ds)
+            if config.save_dt:
+                cache_m.dump(data,'un_metadata.pik')
         ts = importlib.import_module('Trainers',config.strategy)
         trainer = getattr(ts,config.strategy)(config)
         kwargs = None
