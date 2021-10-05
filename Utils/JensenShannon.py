@@ -6,6 +6,8 @@ import numpy as np
 import os,sys
 import argparse
 import importlib
+import math
+from scipy.spatial import distance
 
 from keras.preprocessing.image import ImageDataGenerator
 
@@ -96,7 +98,7 @@ if __name__ == "__main__":
     arg_groups.append(train_args)
 
     train_args.add_argument('--train', action='store_true', dest='train', default=False, 
-        help='Train model')    
+        help='Train models and calculate divergence.')    
     train_args.add_argument('-nets', dest='nets', type=str,default=None, nargs='+', required=True,
         help='Network names for divergence calculation.')
     train_args.add_argument('-tnet',dest='tnet',type=str,default=None,help='Target network for divergence calculation.\n \
@@ -141,12 +143,17 @@ if __name__ == "__main__":
     train_args.add_argument('-lyf', dest='lyf', type=int, 
         help='Freeze this number of layers for training (Default=0).', default=0)
     train_args.add_argument('-tnorm', action='store_true', dest='batch_norm',
-        help='Applies batch normalization during training.',default=False)    
+        help='Applies batch normalization during training.',default=False)
+    train_args.add_argument('-tn', action='store_true', dest='new_net',
+        help='Do not use older weights file.',default=False)    
 
     
     ##Divergence calculation options
     un_args = parser.add_argument_group('Divergence','Divergence calculation options')
-    arg_groups.append(un_args)    
+    arg_groups.append(un_args)
+
+    un_args.add_argument('--calc', action='store_true', dest='calc', default=False, 
+        help='Calculate divergence using savend uncertainties.')    
     un_args.add_argument('-ac_function',dest='ac_function',type=str,
        help='Acquisition function. Check documentation for available functions.',default=None)
     un_args.add_argument('-un_function',dest='un_function',type=str,
@@ -203,6 +210,8 @@ if __name__ == "__main__":
     parser.add_argument('-model_dir', dest='model_path',
         help='Save trained models in dir (Default: TrainedModels).',
         default='TrainedModels')
+    parser.add_argument('-save_dt', action='store_true', dest='save_dt',
+        help='Save data (train, val, uncertainty).',default=False)    
 
     config, unparsed = parser.parse_known_args()
 
@@ -210,6 +219,7 @@ if __name__ == "__main__":
         'datatree.pik':os.path.join(config.cache,'{}-datatree.pik'.format(config.data)),
         'tcga.pik':os.path.join(config.cache,'tcga.pik'),
         'metadata.pik':os.path.join(config.cache,'{0}-{1}-metadata.pik'.format(config.data,os.path.basename(config.predst))),
+        'un_metadata.pik':os.path.join(config.cache,'{0}-{1}-un_metadata.pik'.format(config.data,os.path.basename(config.predst))),
         'sampled_metadata.pik':os.path.join(config.cache,'{0}-sampled_metadata.pik'.format(config.data)),
         'testset.pik':os.path.join(config.cache,'{0}-testset.pik'.format(config.data)),
         'initial_train.pik':os.path.join(config.cache,'{0}-inittrain.pik'.format(config.data)),
@@ -223,10 +233,15 @@ if __name__ == "__main__":
 
     cache_m = CacheManager(locations=files)    
 
+    #Configuration options used by Acquisition functions but not relevant to JS convergence
     config.split = tuple(config.split)
     config.spool = 0
     config.pred_size = 0
     config.save_w = False
+    config.acquire = 100
+    config.clusters = 20
+    config.ffeat = None
+    config.recluster = 0
 
     #Uncertainty function
     function = None
@@ -240,39 +255,90 @@ if __name__ == "__main__":
     dsm = importlib.import_module('Datasources',config.data)
     ds = getattr(dsm,config.data)(config.predst,config.keepimg,config)        
 
+    #Target net uncertainty file
+    tnun = None
+    un_file = 'al-uncertainty-{0}-r{1}.pik'
+    tn_file = un_file.format(config.ac_function,"{}-PHI-{}".format(config.tnet,config.tnphi))
+    cache_m.registerFile(os.path.join(config.logdir,tn_file),tn_file)
+    
     #Train all models and generate uncertainties
-    if config.train:
-        def _common_train(model,trainer,data,ds,config):
+    if config.train and not config.calc:
+        def _common_train(model,trainer,data,ds,config,kwargs):
             trainer.train_x,trainer.train_y = data[0]
             trainer.val_x,trainer.val_y = data[1]
             tmodel,sw_thread,_ = trainer._target_net_train(model)
             un_generator = _make_un_generator(config=config,classes=ds.nclasses,fix_dim=model.check_input_shape(),dps=data[2])
-            kwargs = {'sw_thread':sw_thread}
+            kwargs['sw_thread'] = sw_thread[0] if len(sw_thread) == 1 else sw_thread
+            kwargs['config'] = config
+            tmodel = tmodel[0] if len(tmodel) == 1 else tmodel
             pooled_idx = function(tmodel,un_generator,len(data[2][0]),**kwargs)
 
-            return sw_thread
+            return sw_thread,tmodel
         
         print("*************\nStart base model training\n*************\n")
-        config.new_net = True
+        #Configurations and loading
+        #config.new_net = True
         data = load_metadata(config,ds)
+        if config.save_dt:
+            cache_m.dump(data,'{0}-{1}-un_metadata.pik'.format(config.data,os.path.basename(config.predst)))
         ts = importlib.import_module('Trainers',config.strategy)
         trainer = getattr(ts,config.strategy)(config)
+        kwargs = None
+        #Begin network training
         for m in range(len(config.nets)):
-            print("Current model: {}".format(config.nets[m]))
+            print("Current model: {} PHI={}".format(config.nets[m],config.phis[m]))
             config.phi = config.phis[m] #Set current PHI parameter
             model = trainer.load_modules(config.nets[m],ds)
+            model.setName("{}-PHI-{}".format(model.getName(),config.phis[m]))
+            on_file = un_file.format(config.ac_function,"{}-PHI-{}".format(config.nets[m],config.phis[m]))
+            cache_m.registerFile(os.path.join(config.logdir,on_file),on_file)
 
-            sw_thread = _common_train(model,trainer,data,ds,config)
+            if cache_m.checkFileExistence(on_file) and not config.new_net:
+                print("An uncertainty file already exists for {} PHI={}. Use -tn config option to regenerate".format(config.nets[m],config.phis[m]))
+                continue
             
-            if not sw_thread is None and sw_thread.is_alive():
-                if self._config.info:
-                    print("[JensenShannon] Waiting for model weights...")
-                sw_thread.join()
-        print("Start target network training")
-        model = trainer.load_modules(config.tnet,ds)
-        model.setPhi(config.tnphi)
-        sw_thread = _common_train(model,trainer,data,ds,config)
-        
+            if kwargs is None:
+                kwargs = {}
+            kwargs['model'] = model
+            kwargs['acquisition'] = model.getName()
+
+            sw_thread,tmodel = _common_train(model,trainer,data,ds,config,kwargs)
+            
+            if not sw_thread is None:
+                tl = len(sw_thread)
+                for k in range(tl):
+                    if sw_thread[k].is_alive():
+                        print("Waiting model {} weights' to become available ({}/{})...".format(config.nets[m],k,tl))
+                        sw_thread[k].join()
+
+        if not cache_m.checkFileExistence(tn_file) or config.new_net:
+            print("\n *Start target network training*\n")
+            model = trainer.load_modules(config.tnet,ds)
+            model.setPhi(config.tnphi)
+            model.setName("{}-PHI-{}".format(model.getName(),config.tnphi))
+            kwargs['model'] = model
+            kwargs['acquisition'] = model.getName()
+            sw_thread = _common_train(model,trainer,data,ds,config,kwargs)
+        else:
+            print("An uncertainty file already exists for target {}. Use -tn config option to regenerate".format(config.tnet))
 
     #Calculate divergence
-    
+    if os.path.isfile(os.path.join(config.logdir,tn_file)):
+        _,tnun = cache_m.load(tn_file)
+        print("Target net uncertainties count: {}".format(tnun.shape[0]))
+    else:
+        print("Could not find uncertainties for target: {}".format(cache_m.fileLocation(tn_file)))
+        sys.exit(1)
+
+    for n in range(len(config.nets)):
+        on_file = un_file.format(config.ac_function,"{}-PHI-{}".format(config.nets[n],config.phis[n]))
+        if not cache_m.checkFileExistence(on_file):
+            print("No uncertainty file generated for {} ({})".format(config.nets[n],cache_m.fileLocation(on_file)))
+            continue
+        _,onun = cache_m.load(on_file)
+
+        print("Calculating divergence between {} and {}".format(config.nets[n],config.tnet))
+        jsdist = distance.jensenshannon(onun,tnun,base=2)
+        jsdiv = math.pow(jsdist,2)
+
+        print("*******\n - JS Divergence: {}\n - JS Distance: {}\n*******".format(jsdiv,jsdist))
