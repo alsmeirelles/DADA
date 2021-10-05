@@ -30,7 +30,7 @@ from .Predictions import Predictor
 #Module
 from Utils import Exitcodes,CacheManager
 
-def run_training(config,locations=None):
+def run_training(config,locations=None,run=True):
     """
     Main training function, to work as a new process
     """

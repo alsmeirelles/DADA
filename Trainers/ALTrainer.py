@@ -33,6 +33,7 @@ def run_training(config,locations=None):
         cache_m = CacheManager(locations=locations)
     trainer = ActiveLearningTrainer(config)
     trainer.run()
+
     
 class ActiveLearningTrainer(Trainer):
     """

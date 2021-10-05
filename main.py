@@ -151,7 +151,7 @@ if __name__ == "__main__":
     pre_args.add_argument('-presrc', dest='presrc', type=str,default='', 
         help='Input image or directory of images (runs recursively)',required=False)
     pre_args.add_argument('-predst', dest='predst', type=str,default='tiles', 
-        help='Output tiles go to this directory')
+        help='Output tiles go to this directory. Use this option as training source.')
     pre_args.add_argument('-img_type', dest='img_type', nargs='+', type=str, 
         help='Input image types to consider (list): svs, dicom, nii.', default=None)
     pre_args.add_argument('-mag', dest='magnification', type=int, 

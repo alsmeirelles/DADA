@@ -222,12 +222,12 @@ class GenericDS(ABC):
         else:
             reload_data = True
 
-
-        if reshuffle:
-            X,Y = self._shuffle(X,Y)
-            
         if reload_data:
             X,Y = self.run_dir(self.path)
+            reload_data = False
+            
+        if reshuffle and not reload_data:
+            X,Y = self._shuffle(X,Y)
 
         if reload_data or reshuffle:
             self._cache.dump((X,Y,self.name),metadata_file)

@@ -49,8 +49,7 @@ def ensemble_varratios(pred_model,generator,data_size,**kwargs):
     else:
         return None        
 
-    if 'acquisition' in kwargs:
-        r = kwargs['acquisition']
+    r = kwargs.get('acquisition',0)
 
     if 'model' in kwargs:
         model = kwargs['model']
