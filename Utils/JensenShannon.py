@@ -277,17 +277,17 @@ if __name__ == "__main__":
         
         print("*************\nStart base model training\n*************\n")
         #Configurations and loading
-        #config.new_net = True
         if cache_m.checkFileExistence('un_metadata.pik'):
             data = cache_m.load('un_metadata.pik')
             print("Loaded data already cached ({})".format(cache_m.fileLocation('un_metadata.pik')))
         else:
             data = load_metadata(config,ds)
+            config.new_net = True
             if config.save_dt:
                 cache_m.dump(data,'un_metadata.pik')
         ts = importlib.import_module('Trainers',config.strategy)
         trainer = getattr(ts,config.strategy)(config)
-        kwargs = None
+        kwargs = {}
         #Begin network training
         for m in range(len(config.nets)):
             print("Current model: {} PHI={}".format(config.nets[m],config.phis[m]))
@@ -301,8 +301,6 @@ if __name__ == "__main__":
                 print("An uncertainty file already exists for {} PHI={}. Use -tn config option to regenerate".format(config.nets[m],config.phis[m]))
                 continue
             
-            if kwargs is None:
-                kwargs = {}
             kwargs['model'] = model
             kwargs['acquisition'] = model.getName()
 
