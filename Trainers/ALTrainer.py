@@ -306,7 +306,7 @@ class ActiveLearningTrainer(Trainer):
         
         #Loaded CNN model and Datasource
         model = self.load_modules()
-        self._rex = self._rex.format(model.name)
+
         #Define initial sets
         self.configure_sets()
         #AL components
