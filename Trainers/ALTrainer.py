@@ -306,7 +306,7 @@ class ActiveLearningTrainer(Trainer):
         
         #Loaded CNN model and Datasource
         model = self.load_modules()
-        self._rex = self._rex.format(model.name)
+
         #Define initial sets
         self.configure_sets()
         #AL components
@@ -433,7 +433,7 @@ class ActiveLearningTrainer(Trainer):
             'dps':None,
             'classes':self._ds.nclasses,
             'dim':fix_dim,
-            'keep':False, #self._config.keepimg,
+            'keep':False,#self._config.keepimg,
             'batch_size':self._config.gpu_count * self._config.batch_size if self._config.gpu_count > 0 else self._config.batch_size,
             'image_generator':pool_prep,
             'shuffle':False, #DO NOT SET TRUE!
