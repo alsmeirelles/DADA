@@ -29,7 +29,7 @@ font = {'family' : 'DejaVu Sans',
 mpl.rc('font',**font)
 
 palette = plt.get_cmap('Dark2')
-newcolors = np.ones((12,4))
+newcolors = np.ones((14,4))
 newcolors[0,0:3] = np.array([29/256,39/256,125/256]) #8
 newcolors[1,0:3] = np.array([110/256,29/256,5/256]) #9
 newcolors[2,0:3] = np.array([0/256,44/256,163/256]) #10
@@ -42,6 +42,8 @@ newcolors[8,0:3] = np.array([81/256,60/256,44/256]) #16
 newcolors[9,0:3] = np.array([224/256,44/256,41/256]) #17
 newcolors[10,0:3] = np.array([146/256,38/256,115/256]) #18
 newcolors[11,0:3] = np.array([176/256,108/256,75/256]) #19
+newcolors[12,0:3] = np.array([2/256,162/256,111/256]) #20
+newcolors[13,0:3] = np.array([1/256,101/256,69/256]) #21
 newcolors = np.vstack((palette(np.linspace(0,1,len(palette.colors))),
                            newcolors))
    
@@ -70,7 +72,8 @@ linestyle = [
 #markers = ['','*','+','x','^','.','2','v']
 markers = ['*','+','x','^','.','2','v','s','p','D',8,9,10,'4','']
 patterns = ["+", ".", "/" , "\\" , "|" , "-","o"]
-lang = 'pt'
+#Labels in portuguese (pt) or english (en)
+lang = 'en'
 
 class Plotter(object):
 
@@ -365,7 +368,7 @@ class Plotter(object):
             ax.yaxis.set_major_formatter(formatter)
 
         if not metrics is None:
-            plt.legend(handles=metric_patches,loc=2,ncol=self._ncols,prop=dict(weight='bold'))
+            plt.legend(handles=metric_patches,loc=0,ncol=self._ncols,prop=dict(weight='bold'))
         else:
             plt.legend(loc=0,ncol=2,labels=config.labels,prop=dict(weight='bold'))
             
@@ -1022,9 +1025,9 @@ class Plotter(object):
                     fcolor[:3,] *= 0.7
                     mcolor = np.clip(fcolor,0.0,1.0)
                     plt.plot(data[k]['fntrainset'],data[k]['fnauc'], marker=markers[marker],color=mcolor,
-                             linewidth=2.0,linestyle=linestyle[line][1],alpha=1.0,label=f"{lb}-FN",markersize=8)
+                             linewidth=2.0,linestyle=linestyle[line][1],alpha=1.0,label=f"{lb}-UN",markersize=8)
                     metric_patches.append(mpatches.Patch(facecolor=palette(color),label=lb,edgecolor=hatch_color))
-                    metric_patches.append(mpatches.Patch(facecolor=mcolor,label=f"{lb}-FN",edgecolor=hatch_color))
+                    metric_patches.append(mpatches.Patch(facecolor=mcolor,label=f"{lb}-UN",edgecolor=hatch_color))
                     min_x.append(data[k]['fntrainset'].min())
                     max_x.append(data[k]['fntrainset'].max())
                     min_y.append(data[k]['fnauc'].min())

@@ -339,7 +339,9 @@ if __name__ == "__main__":
             continue
         _,onun = cache_m.load(on_file)
 
-        print("Calculating divergence between {} and {}".format(config.nets[n],config.tnet))
+        print("Calculating divergence between {}-PHI-{} and {}-PHI-{}".format(config.nets[n],config.phis[n],config.tnet,config.tnphi))
+        onun[onun < 0.0] = 0.0
+        tnun[tnun < 0.0] = 0.0
         jsdist = distance.jensenshannon(onun,tnun,base=2)
         jsdiv = math.pow(jsdist,2)
 
