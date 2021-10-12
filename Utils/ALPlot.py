@@ -428,11 +428,28 @@ class Plotter(object):
         plt.tight_layout()
         plt.show()            
             
-    def draw_stats(self,data,xticks,auc_only,labels=None,spread=1,title='',colors=None,yscale=False,maxy=0.0,miny=0.0):
+    def draw_stats(self,data,xticks,auc_only,labels=None,spread=1,title='',colors=None,yscale=False,maxy=0.0,miny=0.0,merge=False):
         """
         @param data <list>: a list as returned by calculate_stats
         """
+        def shade_interval(x_data,y_data,ci,color,up,low):
+            if not np.isnan(ci).any():
+                low_ci = np.clip(y_data - ci,0.0,1.0)
+                upper_ci = np.clip(y_data + ci,0.0,1.0)
+                ym = np.max(upper_ci)
+                yl = np.min(low_ci)
+            else:
+                yl = np.min(y_data)
+                ym = np.max(y_data)
+            local_up = ym if ym > up else up
+            local_low = yl if yl < low else low
+            if not np.isnan(ci).any():
+                plt.fill_between(x_data, low_ci, upper_ci, color = color, alpha = 0.4)
+
+            return local_up,local_low
+                
         color = 0
+        mcolor = None
         line = 0
         marker = 0
         plots = []
@@ -447,7 +464,18 @@ class Plotter(object):
             labels = [l[3] for l in data]
             
         for d in data:
-            x_data,y_data,ci,y_label,color = d
+            if merge:
+                x_data,y_data,ci,y_label,color = data[d]['auc']
+                if data[d]['fnauc'] is None:
+                    merge = False
+                else:
+                    x_data_fn,y_data_fn,ci_fn,_,_ = data[d]['fnauc']
+            elif isinstance(d,int):
+                print("Maybe you used multiple metrics, define -merge option if so")
+                return None
+            else:
+                x_data,y_data,ci,y_label,color = d
+                
             if not colors is None and colors[lbcount] >= 0:
                 color = colors[lbcount]
             elif color < 0:
@@ -468,19 +496,22 @@ class Plotter(object):
 
             c = plt.plot(x_data, y_data, lw = 2.0, marker=markers[marker],linestyle=linestyle[line][1],color=palette(color), alpha = 1)
             plots.append(c)
+            if merge:
+                fcolor = np.asarray(palette(color))
+                fcolor[:3,] *= 0.7
+                mcolor = np.clip(fcolor,0.0,1.0)
+                d = plt.plot(x_data_fn, y_data_fn, lw = 2.0, marker=markers[marker],linestyle=linestyle[line][1],color=mcolor, alpha = 1)
+                plots.append(d)
+                local_max = np.max(x_data_fn)
+                local_min = np.min(x_data_fn)
+                xmax = local_max if local_max > xmax else xmax
+                xmin = local_min if local_min < xmin else xmin
+                
             # Shade the confidence interval
-            if not np.isnan(ci).any():
-                low_ci = np.clip(y_data - ci,0.0,1.0)
-                upper_ci = np.clip(y_data + ci,0.0,1.0)
-                ym = np.max(upper_ci)
-                yl = np.min(low_ci)
-            else:
-                yl = np.min(y_data)
-                ym = np.max(y_data)
-            up = ym if ym > up else up
-            low = yl if yl < low else low
-            if not np.isnan(ci).any():
-                plt.fill_between(x_data, low_ci, upper_ci, color = palette(color), alpha = 0.4)
+            up,low = shade_interval(x_data,y_data,ci,palette(color),up,low)
+            if merge:
+                up,low = shade_interval(x_data_fn,y_data_fn,ci_fn,mcolor,up,low)
+            
             color += 1
             line = (line+1)%len(linestyle)
             marker = color%len(markers)
@@ -1892,6 +1923,7 @@ class Plotter(object):
                             print("Wrong dimensions. Expected {} points in experiment {} but got {}".format(mvalues.shape[1],k,tdata.shape[0]))
                             mvalues = np.delete(mvalues,mvalues.shape[1] - dd,axis=1)
                             trainset = trainset[:-dd]
+                            max_samples -= 1
                         mvalues[i,:tdata.shape[0]] = tdata[:mvalues[i].shape[0]]
                     else:
                         mvalues[i] = data[k][metric][:max_samples]
@@ -1901,6 +1933,7 @@ class Plotter(object):
                     
                 i += 1
 
+            print("Metric: {}".format(metric))
             print(trainset,mvalues,max_samples)
             return (trainset,mvalues,max_samples)
 
@@ -1922,8 +1955,9 @@ class Plotter(object):
             for m in stats:
                 trainset,mvalues,max_samples = stats[m]
                 if trainset is None or mvalues is None:
+                    stats[m] = None
                     continue
-                d = (trainset[:max_samples],np.mean(mvalues.transpose(),axis=1),calc_ci(mvalues.transpose(),ci),metric,color)
+                d = (trainset[:max_samples],np.mean(mvalues.transpose(),axis=1),calc_ci(mvalues.transpose(),ci),m.upper(),color)
                 stats[m] = d
                 print("Max {0}: {1:1.3f}; Mean {0} ({2} acquisitions): {3:1.3f}".format(m,np.max(d[1]),d[1].shape[0],np.mean(d[1])))
             return stats
@@ -2175,12 +2209,19 @@ if __name__ == "__main__":
         if len(data) == 0:
             print("Something is wrong with your command options. No data to plot")
             sys.exit(1)
+        elif config.debug:
+            print("***** Data stats ******\n")
+            print("\n".join(["{}: {}".format(k,data[k]) for k in data]))
 
-        if config.auc_only:
-            p.draw_stats(data,config.xtick,config.auc_only,config.labels,config.spread,config.title,config.colors,yscale=config.yscale,maxy=config.maxy,miny=config.miny)
+        if config.auc_only or config.merge:
+            p.draw_stats(data,config.xtick,config.auc_only,config.labels,config.spread,config.title,
+                             config.colors,yscale=config.yscale,maxy=config.maxy,miny=config.miny,merge=config.merge)
         else:
             p.draw_time_stats(data,config.xtick,config.auc_only,config.metrics,config.labels,config.spread,
                                   config.title,config.colors,yscale=config.yscale,maxy=config.maxy,miny=config.miny,merge=config.merge)
+
+        if config.merge and config.concat:
+            print("WARNING: Concatenation and Merging together!!")
 
     elif config.debug:
 
