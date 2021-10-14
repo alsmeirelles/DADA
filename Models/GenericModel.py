@@ -43,7 +43,7 @@ class GenericModel(ABC):
         #Dataset may have images of different sizes. What to do? Currently, chooses the smallest....
         _,width,height,channels = dims[0]
 
-        if self.rescaleEnabled() and self._config.phi > 1:
+        if self.rescaleEnabled() and self._phi > 1:
             width,height = self.rescale('resolution',(width,height))
             return (width,height,channels)
         else:
