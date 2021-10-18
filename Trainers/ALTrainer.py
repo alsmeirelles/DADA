@@ -519,7 +519,7 @@ class ActiveLearningTrainer(Trainer):
         #Only run training/testing at every tnpred iterations
         if self._config.tnpred == 0:
             return False
-        elif not end_train and ((acqn + 1) % (self._config.tnpred)) != 0:
+        elif not end_train and acqn != 0 and ((acqn + 1) % (self._config.tnpred)) != 0:
             return False
 
         model = self.load_modules(self._config.tnet)
