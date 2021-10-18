@@ -162,6 +162,8 @@ if __name__ == "__main__":
         help='Number of ensemble submodels (Default: 3).', default=3)
     un_args.add_argument('-dropout_steps', dest='dropout_steps', type=int, 
         help='For Bayesian CNNs, sample the network this many times (Default: 100).', default=100)
+    un_args.add_argument('-std', action='store_true', dest='std',
+        help='Calculates mean and standard deviation.',default=False)
     
     ##Load trained models
     load_args = parser.add_argument_group('Load','Load trained models from experiments')
@@ -258,7 +260,7 @@ if __name__ == "__main__":
     #Target net uncertainty file
     tnun = None
     un_file = 'al-uncertainty-{0}-r{1}.pik'
-    tn_file = un_file.format(config.ac_function,"{}-PHI-{}".format(config.tnet,config.tnphi))
+    tn_file = un_file.format(config.ac_function,"{}-PHI-{}-Target".format(config.tnet,config.tnphi))
     cache_m.registerFile(os.path.join(config.logdir,tn_file),tn_file)
     
     #Train all models and generate uncertainties
@@ -293,8 +295,11 @@ if __name__ == "__main__":
             print("Current model: {} PHI={}".format(config.nets[m],config.phis[m]))
             config.phi = config.phis[m] #Set current PHI parameter
             model = trainer.load_modules(config.nets[m],ds)
-            model.setName("{}-PHI-{}".format(model.getName(),config.phis[m]))
-            on_file = un_file.format(config.ac_function,"{}-PHI-{}".format(config.nets[m],config.phis[m]))
+            if config.nets.count(config.nets[m]) > 1:
+                model.setName("{}-PHI-{}-N{}".format(model.getName(),config.phis[m],m))
+            else:
+                model.setName("{}-PHI-{}".format(model.getName(),config.phis[m]))
+            on_file = un_file.format(config.ac_function,model.getName())
             cache_m.registerFile(os.path.join(config.logdir,on_file),on_file)
             
             if cache_m.checkFileExistence(on_file) and not config.new_net:
@@ -317,7 +322,7 @@ if __name__ == "__main__":
             print("\n *Start target network training*\n")
             model = trainer.load_modules(config.tnet,ds)
             model.setPhi(config.tnphi)
-            model.setName("{}-PHI-{}".format(model.getName(),config.tnphi))
+            model.setName("{}-PHI-{}-Target".format(model.getName(),config.tnphi))
             kwargs['model'] = model
             kwargs['acquisition'] = model.getName()
             sw_thread = _common_train(model,trainer,data,ds,config,kwargs)
@@ -332,8 +337,18 @@ if __name__ == "__main__":
         print("Could not find uncertainties for target: {}".format(cache_m.fileLocation(tn_file)))
         sys.exit(1)
 
+    distances = None
+    divergences = None
+
+    if config.std:
+        distances = []
+        divergences = []
+
     for n in range(len(config.nets)):
-        on_file = un_file.format(config.ac_function,"{}-PHI-{}".format(config.nets[n],config.phis[n]))
+        if config.nets.count(config.nets[n]) > 1:
+            on_file = un_file.format(config.ac_function,"{}-PHI-{}-N{}".format(config.nets[n],config.phis[n],n))
+        else:
+            on_file = un_file.format(config.ac_function,"{}-PHI-{}".format(config.nets[n],config.phis[n]))
         if not cache_m.checkFileExistence(on_file):
             print("No uncertainty file generated for {} ({})".format(config.nets[n],cache_m.fileLocation(on_file)))
             continue
@@ -345,4 +360,12 @@ if __name__ == "__main__":
         jsdist = distance.jensenshannon(onun,tnun,base=2)
         jsdiv = math.pow(jsdist,2)
 
+        if config.std:
+            distances.append(jsdist)
+            divergences.append(jsdiv)
+
         print("*******\n - JS Divergence: {}\n - JS Distance: {}\n*******".format(jsdiv,jsdist))
+
+    if config.std:
+        print("*******\n - JS Divergence mean: {}; Standard Dev: {}".format(np.mean(divergences),np.std(divergences)))
+        print(" - JS Distance mean: {}; Starndard dev: {}\n*******".format(np.mean(distances),np.std(distances)))
