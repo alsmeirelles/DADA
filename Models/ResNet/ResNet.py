@@ -469,7 +469,7 @@ class ResNet50V2(ResNet50):
     def __init__(self,config,ds,name=None):
         super().__init__(config,ds,name=name)
         if name is None:
-            self.name = "ResNet50"        
+            self.name = "ResNet50V2"        
 
         self._modelCache = "{0}-model.h5".format(self.name)
         self._weightsCache = "{0}-weights.h5".format(self.name)
