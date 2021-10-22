@@ -21,7 +21,7 @@ if __name__ == "__main__":
     parser.add_argument('-out', dest='out', type=str,default='data', required=False,
         help='Destination directory (save here).')
     parser.add_argument('-type', dest='type', type=str, nargs='+',
-        help='Cancer type: \n \
+        help='Cancer types: \n \
         blca; \n \
         brca; \n \
         cesc; \n \
@@ -32,7 +32,7 @@ if __name__ == "__main__":
         skcm; \n \
         stad; \n \
         ucec; \n',
-       choices=['AL','MN','DB','OR','KM','EN','TMP'],default=None)
+       choices=['blca','brca','cesc','coad','paad','prad','read','skcm','stad','ucec'],default=None)
     parser.add_argument('-ct', dest='ct', nargs='+', type=int, 
         help='Grab this many patches of each type.', default=100,required=False)    
 
@@ -42,10 +42,10 @@ if __name__ == "__main__":
         print("Directory not found: {}".format(config.sdir))
         sys.exit(1)
 
-    if not os.path.isdir(out):
+    if not os.path.isdir(config.out):
         os.mkdir(config.out)
 
-    dirs = list(filter(os.path.isdir,os.listdir(config.sdir)))
+    dirs = list(filter(lambda k: os.path.isdir(os.path.join(config.sdir,k)),os.listdir(config.sdir)))
     if config.type is None:
         cancer = {c:None for c in dirs}
     else:
@@ -57,13 +57,13 @@ if __name__ == "__main__":
             if isinstance(config.ct,int):
                 count = config.ct
             else:
-                count = config.ct[i] if len(config.ct) = len(dirs) else config.ct[0]
+                count = config.ct[i] if len(config.ct) == len(dirs) else config.ct[0]
 
             src = os.path.join(config.sdir,d)
             cancer[d] = list(filter(lambda p: p.endswith('.png'),os.listdir(src)))
-            cancer[d] = random.choices(cancer[d],k=count)
-            with fd as open(os.path.join(src,'label.txt'),'r'):
-                lines = fd.readlines
+            cancer[d] = random.sample(cancer[d],k=count)
+            with open(os.path.join(src,'label.txt'),'r') as fd:
+                lines = fd.readlines()
 
             labels = {}
             for l in lines:
