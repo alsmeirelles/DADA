@@ -61,7 +61,10 @@ if __name__ == "__main__":
 
             src = os.path.join(config.sdir,d)
             cancer[d] = list(filter(lambda p: p.endswith('.png'),os.listdir(src)))
-            cancer[d] = random.sample(cancer[d],k=count)
+            if len(cancer[d]) > count:
+                cancer[d] = random.sample(cancer[d],k=count)
+            else:
+                print("Requested number of samples unvailable in {} ({})".format(d,len(cancer[d])))
             with open(os.path.join(src,'label.txt'),'r') as fd:
                 lines = fd.readlines()
 
