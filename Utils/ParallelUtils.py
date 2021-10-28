@@ -9,10 +9,13 @@ import concurrent.futures
 
 from tqdm import tqdm
 
-def multiprocess_run(exec_function,exec_params,data,cpu_count,pbar,step_size,output_dim=1,txt_label='',verbose=False):
+def multiprocess_run(exec_function,exec_params,data,cpu_count,pbar,step_size,output_dim=1,split_output=False,txt_label='',verbose=False):
     """
     Runs exec_function in a process pool. This function should receive parameters as follows:
     (iterable_data,param2,param3,...), where paramN is inside exec_params 
+    
+    This multiprocessing solution process the full data as a hole, not regarding eventual inner subdivisions.
+    If output should be splited based on inputs, it will be a dictionary and data should be hashable
 
     @param exec_function <function>
     @param exec_params <tuple>
@@ -25,7 +28,10 @@ def multiprocess_run(exec_function,exec_params,data,cpu_count,pbar,step_size,out
     
     # Perform extractions of frames in parallel and in steps
     step = int(len(data) / step_size) + (len(data)%step_size>0)
-    datapoints_db = [[] for i in range(output_dim)]
+    if split_output:
+        datapoints_db = {}
+    else:
+        datapoints_db = [[] for i in range(output_dim)]
     semaphores = []
 
     process_counter = 0
@@ -67,8 +73,11 @@ def multiprocess_run(exec_function,exec_params,data,cpu_count,pbar,step_size,out
             
     for i in range(len(semaphores)):
         res = semaphores[i].get()
-        for k in range(output_dim):
-            datapoints_db[k].extend(res[k])
+        if split_output:
+            datapoints_db[i] = res
+        else:
+            for k in range(output_dim):
+                datapoints_db[k].extend(res[k])
         if not pbar and verbose > 0:
             print("[{2}] Done transformations (step {0}/{1})".format(i,len(semaphores)-1,txt_label))
             sys.stdout.flush()
@@ -84,5 +93,8 @@ def multiprocess_run(exec_function,exec_params,data,cpu_count,pbar,step_size,out
     del datapoints
     
     # remove None points
-    return tuple(filter(lambda x: not x is None, datapoints_db))
+    if split_output:
+        return datapoints_db
+    else:
+        return tuple(filter(lambda x: not x is None, datapoints_db))
     

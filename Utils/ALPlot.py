@@ -29,7 +29,7 @@ font = {'family' : 'DejaVu Sans',
 mpl.rc('font',**font)
 
 palette = plt.get_cmap('Dark2')
-newcolors = np.ones((14,4))
+newcolors = np.ones((15,4))
 newcolors[0,0:3] = np.array([29/256,39/256,125/256]) #8
 newcolors[1,0:3] = np.array([110/256,29/256,5/256]) #9
 newcolors[2,0:3] = np.array([0/256,44/256,163/256]) #10
@@ -43,7 +43,8 @@ newcolors[9,0:3] = np.array([224/256,44/256,41/256]) #17
 newcolors[10,0:3] = np.array([146/256,38/256,115/256]) #18
 newcolors[11,0:3] = np.array([176/256,108/256,75/256]) #19
 newcolors[12,0:3] = np.array([2/256,162/256,111/256]) #20
-newcolors[13,0:3] = np.array([1/256,101/256,69/256]) #21
+newcolors[13,0:3] = np.array([1/256,101/256,69/256]) #21 - Bottle Green
+newcolors[14,0:3] = np.array([13/256,149/256,253/256]) #22 - Dodger Blue
 newcolors = np.vstack((palette(np.linspace(0,1,len(palette.colors))),
                            newcolors))
    
@@ -87,7 +88,7 @@ class Plotter(object):
         self._yIDX = None
         self._ncols = ncols
 
-    def draw_uncertainty(self,data,xticks,spread=1,title='',subfig=False,sub_acq=None):
+    def draw_uncertainty(self,data,xticks,spread=1,title='',subfig=False,sub_acq=None,lloc=0):
         """
         Data: list of tuples in the form (indexes,uncertainties), where both indexes and uncertainties are numpy
         arrays.
@@ -156,7 +157,7 @@ class Plotter(object):
         else:
             labels = ['Patches NS','Patches Sel.','Média Sel.','Média NS']
         ncol = 1 if subfig else self._ncols
-        ax.legend(plots,labels=labels,loc=2,ncol=ncol,prop=dict(weight='bold'),fontsize=14)
+        ax.legend(plots,labels=labels,loc=lloc,ncol=ncol,prop=dict(weight='bold'),fontsize=14)
         ax.set_xticks(xticks)
         ax.set_yticks(np.arange(0.0, maxu+0.1, 0.05))
         ax.set_title(title, loc='center', fontsize=12, fontweight=0, pad=2.0, color='orange')
@@ -252,7 +253,7 @@ class Plotter(object):
         plt.grid(True)
         plt.show()
 
-    def draw_time_stats(self,data,xticks,auc_only,metrics,labels=None,spread=1,title='',colors=None,yscale=False,maxy=0.0,miny=0.0,merge=False):
+    def draw_time_stats(self,data,xticks,auc_only,metrics,labels=None,spread=1,title='',colors=None,yscale=False,maxy=0.0,miny=0.0,merge=False,lloc=0):
         """
         @param data <list>: a list as returned by calculate_stats
         """
@@ -368,9 +369,9 @@ class Plotter(object):
             ax.yaxis.set_major_formatter(formatter)
 
         if not metrics is None:
-            plt.legend(handles=metric_patches,loc=0,ncol=self._ncols,prop=dict(weight='bold'))
+            plt.legend(handles=metric_patches,loc=lloc,ncol=self._ncols,prop=dict(weight='bold'))
         else:
-            plt.legend(loc=0,ncol=2,labels=config.labels,prop=dict(weight='bold'))
+            plt.legend(loc=lloc,ncol=2,labels=config.labels,prop=dict(weight='bold'))
             
         if xmax > 1000:
             plt.xticks(rotation=30)
@@ -428,7 +429,7 @@ class Plotter(object):
         plt.tight_layout()
         plt.show()            
             
-    def draw_stats(self,data,xticks,auc_only,labels=None,spread=1,title='',colors=None,yscale=False,maxy=0.0,miny=0.0,merge=False):
+    def draw_stats(self,data,xticks,auc_only,labels=None,spread=1,title='',colors=None,yscale=False,maxy=0.0,miny=0.0,merge=False,lloc=0):
         """
         @param data <list>: a list as returned by calculate_stats
         """
@@ -498,7 +499,7 @@ class Plotter(object):
             plots.append(c)
             if merge:
                 fcolor = np.asarray(palette(color))
-                fcolor[:3,] *= 0.7
+                fcolor[:3,] *= 0.6
                 mcolor = np.clip(fcolor,0.0,1.0)
                 d = plt.plot(x_data_fn, y_data_fn, lw = 2.0, marker=markers[marker],linestyle=linestyle[line][1],color=mcolor, alpha = 1)
                 plots.append(d)
@@ -523,7 +524,7 @@ class Plotter(object):
             plt.ylabel(y_label)
                 
         # Label the axes and provide a title
-        plt.legend(plots,labels=labels,loc=0,ncol=self._ncols,prop=dict(weight='bold'))
+        plt.legend(plots,labels=labels,loc=lloc,ncol=self._ncols,prop=dict(weight='bold'))
         #ydelta = (1.0 - low)/10
         ydelta = 0.1
         if yscale or (maxy == 0.0 and miny == 0.0):
@@ -613,7 +614,7 @@ class Plotter(object):
         plt.grid(True)
         plt.show()
 
-    def draw_multitime(self,data,title,xtick,metrics,colors=None,labels=None):
+    def draw_multitime(self,data,title,xtick,metrics,colors=None,labels=None,lloc=0):
         """
         Plot multiple time references for the same experiment. Timing parameters are given by the metrics
         """
@@ -655,7 +656,7 @@ class Plotter(object):
             
         formatter = FuncFormatter(self.format_func)
         ax.yaxis.set_major_formatter(formatter)
-        plt.legend(handles=metric_patches,loc=2,ncol=self._ncols,prop=dict(weight='bold'))
+        plt.legend(handles=metric_patches,loc=lloc,ncol=self._ncols,prop=dict(weight='bold'))
         ax.set_xticks(np.arange(data['trainset'].min(), data['trainset'].max()+1, xtick))
         if data['trainset'].max() > 1000:
             plt.setp(ax.get_xticklabels(),rotation=30)
@@ -979,6 +980,7 @@ class Plotter(object):
         miny=kwargs.get('miny',0.0)
         scale=kwargs.get('scale',True)
         merge=kwargs.get('merge',False)
+        lloc=kwargs.get('lloc',0)
 
         color = 0
         hatch_color = 'white'
@@ -1187,9 +1189,9 @@ class Plotter(object):
 
 
         if not other is None or merge:
-            plt.legend(handles=metric_patches,loc=0,ncol=self._ncols,prop=dict(weight='bold'))
+            plt.legend(handles=metric_patches,loc=lloc,ncol=self._ncols,prop=dict(weight='bold'))
         else:
-            plt.legend(loc=0,ncol=self._ncols,labels=config.labels,prop=dict(weight='bold'))
+            plt.legend(loc=lloc,ncol=self._ncols,labels=config.labels,prop=dict(weight='bold'))
             
         if max(max_x) > 1000:
             plt.xticks(rotation=30)
@@ -1971,6 +1973,24 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Convolunional Neural \
         Network for Image Segmentation.')
 
+    ##General params
+    parser.add_argument('-xtick', dest='xtick', type=int, 
+        help='xtick interval.', default=200,required=False)
+    parser.add_argument('-ytick', dest='ytick', type=int, 
+        help='ytick interval.', default=200,required=False)
+    parser.add_argument('-ncols', dest='ncols', type=int, 
+        help='# of columns in label box.', default=2,required=False)
+    parser.add_argument('-lloc', dest='lloc', type=int, 
+        help='Location of label box.', default=0,required=False)
+    parser.add_argument('-maxx', dest='maxx', type=int, 
+        help='Plot maximum X.', default=None,required=False)
+    parser.add_argument('-maxy', dest='maxy', type=float, 
+        help='Plot maximum Y.', default=0.0,required=False)
+    parser.add_argument('-miny', dest='miny', type=float, 
+        help='Plot maximum Y.', default=0.0,required=False)
+    parser.add_argument('-t', dest='title', type=str,default='', 
+        help='Figure title.')
+    
     ##Multiline SLURM parse
     parser.add_argument('--multi', action='store_true', dest='multi', default=False, 
         help='Plot multiple lines from slurm files.')
@@ -1982,20 +2002,6 @@ if __name__ == "__main__":
         help='Experiment IDs to plot.', default=None,required=False)
     parser.add_argument('-colors', dest='colors', nargs='+', type=int, 
         help='Line colors. Follow the order of the IDs.', default=None,required=False)
-    parser.add_argument('-xtick', dest='xtick', type=int, 
-        help='xtick interval.', default=200,required=False)
-    parser.add_argument('-ytick', dest='ytick', type=int, 
-        help='ytick interval.', default=200,required=False)
-    parser.add_argument('-ncols', dest='ncols', type=int, 
-        help='# of columns in label box.', default=2,required=False)
-    parser.add_argument('-maxx', dest='maxx', type=int, 
-        help='Plot maximum X.', default=None,required=False)
-    parser.add_argument('-maxy', dest='maxy', type=float, 
-        help='Plot maximum Y.', default=0.0,required=False)
-    parser.add_argument('-miny', dest='miny', type=float, 
-        help='Plot maximum Y.', default=0.0,required=False)
-    parser.add_argument('-t', dest='title', type=str,default='', 
-        help='Figure title.')
     parser.add_argument('-labels', dest='labels', nargs='+', type=str, 
         help='Curve labels.',default=None,required=False)
     parser.add_argument('-concat', action='store_true', dest='concat', default=False, 
@@ -2112,14 +2118,14 @@ if __name__ == "__main__":
         if not config.metrics is None and len(config.ids) == 1:
             ex_dir = "{}-{}".format(exp_type,str(config.ids[0]))
             data = p.parseMetrics(p.parseSlurm(ex_dir,config.maxx),config.ids[0],config.metrics)
-            p.draw_multilabel(data,config.title,config.xtick,config.metrics,config.labels,config.yscale)
+            p.draw_multilabel(data,config.title,config.xtick,config.metrics,config.labels,config.yscale,config.lloc)
         else:
             data = p.parseResults(exp_type,config.ids,maxx=config.maxx,concat=config.concat)
             if len(data) == 0:
                 print("Something is wrong with your command options. No data to plot")
                 sys.exit(1)
             kwargs = {'labels':config.labels,'pos':config.pos,'auc':config.auc_only,'other':config.metrics,'colors':config.colors,
-                          'maxy':config.maxy,'miny':config.miny,'scale':config.yscale,'merge':config.merge}
+                          'maxy':config.maxy,'miny':config.miny,'scale':config.yscale,'merge':config.merge,'lloc':config.lloc}
             p.draw_multiline(data,config.title,config.xtick,**kwargs)
                 
     elif config.single:
@@ -2215,10 +2221,10 @@ if __name__ == "__main__":
 
         if config.auc_only or config.merge:
             p.draw_stats(data,config.xtick,config.auc_only,config.labels,config.spread,config.title,
-                             config.colors,yscale=config.yscale,maxy=config.maxy,miny=config.miny,merge=config.merge)
+                             config.colors,yscale=config.yscale,maxy=config.maxy,miny=config.miny,merge=config.merge,lloc=config.lloc)
         else:
             p.draw_time_stats(data,config.xtick,config.auc_only,config.metrics,config.labels,config.spread,
-                                  config.title,config.colors,yscale=config.yscale,maxy=config.maxy,miny=config.miny,merge=config.merge)
+                                  config.title,config.colors,yscale=config.yscale,maxy=config.maxy,miny=config.miny,merge=config.merge,lloc=config.lloc)
 
         if config.merge and config.concat:
             print("WARNING: Concatenation and Merging together!!")

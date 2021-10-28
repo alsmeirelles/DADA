@@ -228,8 +228,8 @@ def save_normalize_tile(img,dimensions,normalizer,outdir,verbose):
     
     return dimensions
 
-#From https://github.com/SBU-BMI/quip_cnn_segmentation
-def white_ratio(pat):
+#From https://github.com/SBU-BMI/quip_cnn_segmentation/blob/master/segmentation-of-nuclei/preprocess.py
+def white_ratio(pat,epw=None):
     """
     Foreground/background ratio according to article:
     Spatial Organization And Molecular Correlation Of Tumor-Infiltrating Lymphocytes Using Deep Learning On Pathology Images
@@ -246,7 +246,9 @@ def white_ratio(pat):
             return 1.0
         else:
             return 0.0
-    elif 100 <= pat.shape[0] <= 200 or 100 <= pat.shape[1] <= 200:
+    elif not epw is None:
+        pw = epw
+    elif 100 <= pat.shape[0] <= 300 or 100 <= pat.shape[1] <= 300:
         pw = 50
         
     for x in range(0, pat.shape[0]-pw, int(pw/2)):
@@ -267,7 +269,7 @@ def background(pat):
     """
     whiteness = (np.std(pat[:,:,0]) + np.std(pat[:,:,1]) + np.std(pat[:,:,2])) / 3.0
     
-    if whiteness < 18:
+    if whiteness < 14:
         return True
     else:
         return False
