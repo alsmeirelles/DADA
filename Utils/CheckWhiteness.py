@@ -63,7 +63,9 @@ if __name__ == "__main__":
     parser.add_argument('-threads', dest='th_count', type=int, 
         help='Number of threads/process (Default: 4).', default=4)
     parser.add_argument('-pw', dest='pw', type=int, 
-        help='Whiteness region (Default: 50).', default=50)    
+        help='Whiteness region (Default: 50).', default=50)
+    parser.add_argument('-np', dest='np', type=int, 
+        help='Number of patches per acquisition (Default: 200).', default=200)    
     parser.add_argument('-v', action='count', default=0, dest='verbose',
         help='Amount of verbosity (more \'v\'s means more verbose).')
     
@@ -85,12 +87,16 @@ if __name__ == "__main__":
 
     data = None
     ordered_k = list(wt.keys())
-    ordered_k.sort()
+    ordered_k.sort(key=lambda x:wt[x][0])
     for k in ordered_k:
         print("Acquisition {}:\n - mean whiteness: {};\n - standard dev: {}".format(wt[k][0],np.mean(wt[k][1]),np.std(wt[k][1])))
         if data is None:
-            data = np.zeros(shape=(len(wt),len(wt[k][1])))
-        data[k] = wt[k][1]
+            data = np.zeros(shape=(len(wt),config.np))
+
+        if data[k].shape[0] > wt[k][1].shape[0]:
+            data[k,:wt[k][1].shape[0]] = wt[k][1]
+        else:
+            data[k] = wt[k][1]
         print("***************************")
 
     print("Mean patch whiteness in experiment: {}; STD Dev: {}".format(np.mean(data),np.std(data)))
