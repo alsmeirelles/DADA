@@ -136,6 +136,8 @@ class Trainer(object):
         """
         train_generator,val_generator = (None,None)
 
+        ##TODO: this is useless, augmentation should be defined through imgaug and passed to batch generator. ImageDataGenerator
+        ## is not used inside the batch generators anymore
         if self._config.augment:
             train_prep = ImageDataGenerator(
                 samplewise_center=self._config.batch_norm,

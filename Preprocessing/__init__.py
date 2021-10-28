@@ -5,4 +5,4 @@
 from .PImage import PImage
 from .NPImage import NPImage
 
-#from .Preprocess import background,white_ratio
+from .Preprocess import background,white_ratio
