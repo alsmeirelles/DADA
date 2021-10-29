@@ -82,12 +82,12 @@ if __name__ == "__main__":
     else:
         ac_dirs = [d for d in config.ac_n if d in dirs]
 
-    wt = multiprocess_run(run_acquisition,(config.sdir,config.th_count,config.pw,config.verbose),ac_dirs,config.cpu_count,
+    wt = multiprocess_run(run_acquisition,(config.sdir,config.pw,config.th_count,config.verbose),ac_dirs,config.cpu_count,
                               config.pbar,1,split_output=True,txt_label='Acquisition steps',verbose=config.verbose)
 
     data = None
     ordered_k = list(wt.keys())
-    ordered_k.sort(key=lambda x:wt[x][0])
+    ordered_k.sort(key=lambda x:int(wt[x][0]))
     for k in ordered_k:
         print("Acquisition {}:\n - mean whiteness: {};\n - standard dev: {}".format(wt[k][0],np.mean(wt[k][1]),np.std(wt[k][1])))
         if data is None:
