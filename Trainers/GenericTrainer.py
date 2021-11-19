@@ -318,7 +318,7 @@ class Trainer(object):
 
         if self._config.info and summary:
             print(single.summary())
-        elif self._config.verbose > 1:
+        if self._config.verbose >= 1:
             print("Model parameters: {}".format(single.count_params()))
             print("Model layers: {}".format(len(single.layers)))
 

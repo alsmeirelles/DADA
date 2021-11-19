@@ -23,7 +23,7 @@ import argparse
 import scipy.stats
 
 font = {'family' : 'DejaVu Sans',
-        'weight' : 'normal',
+        'weight' : 'bold',
         'size'   : 21}
 
 mpl.rc('font',**font)
@@ -253,11 +253,26 @@ class Plotter(object):
         plt.grid(True)
         plt.show()
 
-    def draw_time_stats(self,data,xticks,auc_only,metrics,labels=None,spread=1,title='',colors=None,yscale=False,maxy=0.0,miny=0.0,merge=False,lloc=0):
+    def draw_time_stats(self,data,**props):
         """
         @param data <list>: a list as returned by calculate_stats
         """
         import matplotlib.patches as mpatches
+
+        #Function params
+        xticks=props.get('xticks',200)
+        auc_only=props.get('auc_only',True)
+        metrics=props.get('metrics',None)
+        labels=props.get('labels',None)
+        spread=props.get('spread',1)
+        title=props.get('title','')
+        colors=props.get('colors',None)
+        yscale=props.get('scale',False)
+        maxy=props.get('maxy',0.0)
+        miny=props.get('miny',0.0)
+        merge=props.get('merge',False)
+        lloc=props.get('lloc',0)
+        lsize=props.get('lsize',21)
         
         color = 0
         line = 0
@@ -369,9 +384,9 @@ class Plotter(object):
             ax.yaxis.set_major_formatter(formatter)
 
         if not metrics is None:
-            plt.legend(handles=metric_patches,loc=lloc,ncol=self._ncols,prop=dict(weight='bold'))
+            plt.legend(handles=metric_patches,loc=lloc,ncol=self._ncols,prop={'weight':'bold','size':lsize})
         else:
-            plt.legend(loc=lloc,ncol=2,labels=config.labels,prop=dict(weight='bold'))
+            plt.legend(loc=lloc,ncol=2,labels=config.labels,prop={'weight':'bold','size':lsize})
             
         if xmax > 1000:
             plt.xticks(rotation=30)
@@ -429,7 +444,7 @@ class Plotter(object):
         plt.tight_layout()
         plt.show()            
             
-    def draw_stats(self,data,xticks,auc_only,labels=None,spread=1,title='',colors=None,yscale=False,maxy=0.0,miny=0.0,merge=False,lloc=0):
+    def draw_stats(self,data,**props):
         """
         @param data <list>: a list as returned by calculate_stats
         """
@@ -448,6 +463,19 @@ class Plotter(object):
                 plt.fill_between(x_data, low_ci, upper_ci, color = color, alpha = 0.4)
 
             return local_up,local_low
+
+        xticks=props.get('xticks',200)
+        auc_only=props.get('auc_only',True)
+        labels=props.get('labels',None)
+        spread=props.get('spread',1)
+        title=props.get('title','')
+        colors=props.get('colors',None)
+        yscale=props.get('scale',False)
+        maxy=props.get('maxy',0.0)
+        miny=props.get('miny',0.0)
+        merge=props.get('merge',False)
+        lloc=props.get('lloc',0)
+        lsize=props.get('lsize',12)
                 
         color = 0
         mcolor = None
@@ -518,13 +546,13 @@ class Plotter(object):
             marker = color%len(markers)
 
             if lang == 'en':
-                plt.xlabel("Trainset size")
+                plt.xlabel("Training set size")
             else:
                 plt.xlabel("Conjunto de treinamento")
             plt.ylabel(y_label)
                 
         # Label the axes and provide a title
-        plt.legend(plots,labels=labels,loc=lloc,ncol=self._ncols,prop=dict(weight='bold'))
+        plt.legend(plots,labels=labels,loc=lloc,ncol=self._ncols,prop={'weight':'bold','size':lsize})
         #ydelta = (1.0 - low)/10
         ydelta = 0.1
         if yscale or (maxy == 0.0 and miny == 0.0):
@@ -1613,7 +1641,10 @@ class Plotter(object):
         data['traintime'] = np.asarray(data['traintime'])
         #Last iteration doesn't have an aquisition phase (zero time)
         if len(data['traintime']) > len(data['acqtime']):
+            data['taqtime'] = data['acqtime'] + data['traintime'][:-1]
             data['acqtime'].append(0.0)
+        else:
+            data['taqtime'] = data['acqtime'] + data['traintime']
         data['acqtime'] = np.asarray(data['acqtime'])
         data['time'] = np.asarray(data['time'])
         data['wsave'] = np.asarray(data['wsave'])
@@ -1626,7 +1657,6 @@ class Plotter(object):
         data['accuracy'] = np.asarray(data['accuracy'])
         data['fnaccuracy'] = np.asarray(data['fnaccuracy'])        
         data['labels'] = np.asarray(data['labels'])
-        data['taqtime'] = data['acqtime'] + data['traintime']
             
         if not maxx is None:
             if maxx > np.max(data['trainset']):
@@ -1980,7 +2010,7 @@ if __name__ == "__main__":
         help='ytick interval.', default=200,required=False)
     parser.add_argument('-ncols', dest='ncols', type=int, 
         help='# of columns in label box.', default=2,required=False)
-    parser.add_argument('-lloc', dest='lloc', type=int, 
+    parser.add_argument('-lloc', dest='lloc', type=float, nargs='+',
         help='Location of label box.', default=0,required=False)
     parser.add_argument('-maxx', dest='maxx', type=int, 
         help='Plot maximum X.', default=None,required=False)
@@ -1990,6 +2020,8 @@ if __name__ == "__main__":
         help='Plot maximum Y.', default=0.0,required=False)
     parser.add_argument('-t', dest='title', type=str,default='', 
         help='Figure title.')
+    parser.add_argument('-lsize', dest='lsize', type=int, 
+        help='Legend font size.', default=21,required=False)
     
     ##Multiline SLURM parse
     parser.add_argument('--multi', action='store_true', dest='multi', default=False, 
@@ -2102,7 +2134,16 @@ if __name__ == "__main__":
     if config.sdir is None or not os.path.isdir(config.sdir):
         print("Directory not found: {}".format(config.sdir))
         sys.exit(1)
-        
+
+    if isinstance(config.lloc,list):
+        if len(config.lloc) == 1:
+            config.lloc = int(config.lloc[0])
+        elif len(config.lloc) == 2:
+            config.lloc = tuple(config.lloc)
+        else:
+            print("Too many arguments for -lloc")
+            sys.exit(1)
+            
     if config.multi and not (config.stats or config.debug):
         if config.sdir is None:
             print("You should specify an experiment directory (use -sd option).")
@@ -2219,12 +2260,13 @@ if __name__ == "__main__":
             print("***** Data stats ******\n")
             print("\n".join(["{}: {}".format(k,data[k]) for k in data]))
 
+        kwargs = {'labels':config.labels,'xticks':config.xtick,'auc':config.auc_only,'colors':config.colors,'title':config.title,'lsize':config.lsize,
+                          'maxy':config.maxy,'miny':config.miny,'scale':config.yscale,'merge':config.merge,'lloc':config.lloc,'spread':config.spread}
         if config.auc_only or config.merge:
-            p.draw_stats(data,config.xtick,config.auc_only,config.labels,config.spread,config.title,
-                             config.colors,yscale=config.yscale,maxy=config.maxy,miny=config.miny,merge=config.merge,lloc=config.lloc)
+            p.draw_stats(data,**kwargs)
         else:
-            p.draw_time_stats(data,config.xtick,config.auc_only,config.metrics,config.labels,config.spread,
-                                  config.title,config.colors,yscale=config.yscale,maxy=config.maxy,miny=config.miny,merge=config.merge,lloc=config.lloc)
+            kwargs['metrics'] = config.metrics
+            p.draw_time_stats(data,**kwargs)
 
         if config.merge and config.concat:
             print("WARNING: Concatenation and Merging together!!")
