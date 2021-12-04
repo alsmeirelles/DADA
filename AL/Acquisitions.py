@@ -22,7 +22,7 @@ Returns: numpy array of element indexes
 def km_uncert(trained_models,generator,data_size,**kwargs):
     return _km_uncert(trained_models,generator,data_size,**kwargs)
 
-def kmng_uncert(trained_models,generator,data_size,**kwargs):
+def dada(trained_models,generator,data_size,**kwargs):
     kwargs['ng_logic'] = True
     return _km_uncert(trained_models,generator,data_size,**kwargs)
 
