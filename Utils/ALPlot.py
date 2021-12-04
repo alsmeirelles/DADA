@@ -23,7 +23,7 @@ import argparse
 import scipy.stats
 
 font = {'family' : 'DejaVu Sans',
-        'weight' : 'normal',
+        'weight' : 'bold',
         'size'   : 21}
 
 mpl.rc('font',**font)
@@ -253,11 +253,26 @@ class Plotter(object):
         plt.grid(True)
         plt.show()
 
-    def draw_time_stats(self,data,xticks,auc_only,metrics,labels=None,spread=1,title='',colors=None,yscale=False,maxy=0.0,miny=0.0,merge=False,lloc=0):
+    def draw_time_stats(self,data,**props):
         """
         @param data <list>: a list as returned by calculate_stats
         """
         import matplotlib.patches as mpatches
+
+        #Function params
+        xticks=props.get('xticks',200)
+        auc_only=props.get('auc_only',True)
+        metrics=props.get('metrics',None)
+        labels=props.get('labels',None)
+        spread=props.get('spread',1)
+        title=props.get('title','')
+        colors=props.get('colors',None)
+        yscale=props.get('scale',False)
+        maxy=props.get('maxy',0.0)
+        miny=props.get('miny',0.0)
+        merge=props.get('merge',False)
+        lloc=props.get('lloc',0)
+        lsize=props.get('lsize',21)
         
         color = 0
         line = 0
@@ -308,10 +323,16 @@ class Plotter(object):
                 continue
 
             #Check current trainset
-            if self._nX is None:
+            if merge and self._nX is None:
                 self._nX = x_data
                 tset = x_data
+            elif not merge and 'tnidx' in data[d]:
+                self._yIDX = data[d]['tnidx']
+                tdata = tdata[self._yIDX]
+                self._nX = x_data[self._yIDX]
             else:
+                if self._nX is None:
+                    self._nX = x_data
                 if len(self._nX) != len(x_data) and not merge:
                     self._yIDX = np.in1d(x_data,self._nX)
                     tset = x_data[self._yIDX]
@@ -369,9 +390,9 @@ class Plotter(object):
             ax.yaxis.set_major_formatter(formatter)
 
         if not metrics is None:
-            plt.legend(handles=metric_patches,loc=lloc,ncol=self._ncols,prop=dict(weight='bold'))
+            plt.legend(handles=metric_patches,loc=lloc,ncol=self._ncols,prop={'weight':'bold','size':lsize})
         else:
-            plt.legend(loc=lloc,ncol=2,labels=config.labels,prop=dict(weight='bold'))
+            plt.legend(loc=lloc,ncol=2,labels=config.labels,prop={'weight':'bold','size':lsize})
             
         if xmax > 1000:
             plt.xticks(rotation=30)
@@ -429,7 +450,7 @@ class Plotter(object):
         plt.tight_layout()
         plt.show()            
             
-    def draw_stats(self,data,xticks,auc_only,labels=None,spread=1,title='',colors=None,yscale=False,maxy=0.0,miny=0.0,merge=False,lloc=0):
+    def draw_stats(self,data,**props):
         """
         @param data <list>: a list as returned by calculate_stats
         """
@@ -448,6 +469,19 @@ class Plotter(object):
                 plt.fill_between(x_data, low_ci, upper_ci, color = color, alpha = 0.4)
 
             return local_up,local_low
+
+        xticks=props.get('xticks',200)
+        auc_only=props.get('auc_only',True)
+        labels=props.get('labels',None)
+        spread=props.get('spread',1)
+        title=props.get('title','')
+        colors=props.get('colors',None)
+        yscale=props.get('scale',False)
+        maxy=props.get('maxy',0.0)
+        miny=props.get('miny',0.0)
+        merge=props.get('merge',False)
+        lloc=props.get('lloc',0)
+        lsize=props.get('lsize',12)
                 
         color = 0
         mcolor = None
@@ -482,6 +516,8 @@ class Plotter(object):
             elif color < 0:
                 color = 0
 
+            print("{}: {}".format(labels[lbcount],d))
+            
             lbcount += 1
                 
             line = color%len(linestyle)
@@ -492,6 +528,7 @@ class Plotter(object):
             local_min = np.min(x_data)
             xmax = local_max if local_max > xmax else xmax
             xmin = local_min if local_min < xmin else xmin
+
             if auc_only and y_label != 'AUC':
                 continue
 
@@ -518,13 +555,13 @@ class Plotter(object):
             marker = color%len(markers)
 
             if lang == 'en':
-                plt.xlabel("Trainset size")
+                plt.xlabel("Training set size")
             else:
                 plt.xlabel("Conjunto de treinamento")
             plt.ylabel(y_label)
                 
         # Label the axes and provide a title
-        plt.legend(plots,labels=labels,loc=lloc,ncol=self._ncols,prop=dict(weight='bold'))
+        plt.legend(plots,labels=labels,loc=lloc,ncol=self._ncols,prop={'weight':'bold','size':lsize})
         #ydelta = (1.0 - low)/10
         ydelta = 0.1
         if yscale or (maxy == 0.0 and miny == 0.0):
@@ -1096,7 +1133,7 @@ class Plotter(object):
                     if not merge:
                         (_,_),(tset,tdata) = self.return_fndata(data[k],metric,merge)
                     else:
-                        (tset,_),(_,tdata) = self.return_fndata(data[k],metric,merge)
+                        tset,tdata = self.return_fndata(data[k],metric,merge)
                     self._nX = data[k]['fntrainset']
                 else:
                     if not self._nX is None:
@@ -1291,7 +1328,7 @@ class Plotter(object):
 
         return split_data
 
-    def parseResults(self,path,al_dirs,n_ids=None,maxx=None,concat=False,wsi=False,ncf=20):
+    def parseResults(self,path,al_dirs,n_ids=None,maxx=None,minx=None,concat=False,wsi=False,ncf=20):
 
         def parseDirs(path,al_dirs,concat):
             data = {}
@@ -1305,7 +1342,7 @@ class Plotter(object):
                     if wsi:
                         data[exp] = self.compileWSIData(d_path,maxx=maxx,concat=concat,ncf=ncf)
                     else:
-                        data[exp] = self.parseSlurm(d_path,maxx=maxx,concat=concat)
+                        data[exp] = self.parseSlurm(d_path,maxx=maxx,minx=minx,concat=concat)
                 else:
                     print("Results dir not found: {}".format(d_path))
             return data
@@ -1322,7 +1359,7 @@ class Plotter(object):
         else:
             return parseDirs(path,al_dirs,concat)
 
-    def compileWSIData(self,path=None,maxx=None,concat=False,ncf=20,init_train=500):
+    def compileWSIData(self,path=None,maxx=None,minx=None,concat=False,ncf=20,init_train=500):
         import pickle
         
         if path is None and self.path is None:
@@ -1404,7 +1441,7 @@ class Plotter(object):
             else:
                 return ((data['trainset'][idx],data[key][idx]),(data['trainset'][idx],data[key][idx]))
         elif merge:
-            return ((np.hstack((data['trainset'],data['fntrainset'])),[]),([],np.hstack((data[key][data['tnidx']],data[key][data['fnidx']]))))
+            return (np.hstack((data['trainset'],data['fntrainset'])),[],np.hstack((data[key][data['tnidx']],data[key][data['fnidx']])))
         else:
             m = data[key].shape[0]
             fnkey = 'fn'+ key if not key.startswith('fn') else key
@@ -1434,7 +1471,7 @@ class Plotter(object):
         """
         return np.asarray(range(start,(size*step)+start,step))
                               
-    def parseSlurm(self,path=None,maxx=None,concat=False):
+    def parseSlurm(self,path=None,maxx=None,minx=None,concat=False):
 
         if path is None and self.path is None:
             print("No directory found")
@@ -1514,9 +1551,6 @@ class Plotter(object):
         labelrc = re.compile(labelrex)
         colorrc = re.compile(colorrex)
 
-        #Set a time reference
-        #zero = datetime.datetime(2020,1,1)
-        #zero_num = mdates.date2num(zero)
         wstime = None
         wltime = None
         skip_repeat = False
@@ -1613,7 +1647,10 @@ class Plotter(object):
         data['traintime'] = np.asarray(data['traintime'])
         #Last iteration doesn't have an aquisition phase (zero time)
         if len(data['traintime']) > len(data['acqtime']):
+            data['taqtime'] = data['acqtime'] + data['traintime'][:-1]
             data['acqtime'].append(0.0)
+        else:
+            data['taqtime'] = data['acqtime'] + data['traintime']
         data['acqtime'] = np.asarray(data['acqtime'])
         data['time'] = np.asarray(data['time'])
         data['wsave'] = np.asarray(data['wsave'])
@@ -1626,33 +1663,36 @@ class Plotter(object):
         data['accuracy'] = np.asarray(data['accuracy'])
         data['fnaccuracy'] = np.asarray(data['fnaccuracy'])        
         data['labels'] = np.asarray(data['labels'])
-        data['taqtime'] = data['acqtime'] + data['traintime']
-            
+
+        upl = data['trainset'].shape[0]
+        lowl = 0
         if not maxx is None:
             if maxx > np.max(data['trainset']):
                 print("Slurm file ({}) does not have that many samples ({}). Maximum is {}.".format(slurm_path,maxx,np.max(data['trainset'])))
                 #sys.exit(1)
-                upl = data['trainset'].shape[0]
             else:
                 upl = np.where(data['trainset'] >= maxx)[0][0]
                 upl += 1
-            
-            data['time'] = data['time'][:upl]
-            data['traintime'] = data['traintime'][:upl]
-            data['acqtime'] = data['acqtime'][:upl]
-            data['wsave'] = data['wsave'][:upl]
-            data['wload'] = data['wload'][:upl]
-            data['kmeans'] = data['kmeans'][:upl]
-            data['feature'] = data['feature'][:upl]            
-            data['auc'] = data['auc'][:upl]
-            data['trainset'] = data['trainset'][:upl]
-            data['accuracy'] = data['accuracy'][:upl]
-            data['labels'] = data['labels'][:upl]
-            data['taqtime'] = data['taqtime'][:upl]
+        if not minx is None:
+            lowl = np.where(data['trainset'] < minx)[0][0]
+            lowl += 1
+
+        data['time'] = data['time'][lowl:upl]
+        data['traintime'] = data['traintime'][lowl:upl]
+        data['acqtime'] = data['acqtime'][lowl:upl]
+        data['wsave'] = data['wsave'][lowl:upl]
+        data['wload'] = data['wload'][lowl:upl]
+        data['kmeans'] = data['kmeans'][lowl:upl]
+        data['feature'] = data['feature'][lowl:upl]            
+        data['auc'] = data['auc'][lowl:upl]
+        data['trainset'] = data['trainset'][lowl:upl]
+        data['accuracy'] = data['accuracy'][lowl:upl]
+        data['labels'] = data['labels'][lowl:upl]
+        data['taqtime'] = data['taqtime'][lowl:upl]
 
         #Generate indexes that correspond to data from Feature Net and Target Net
         if data['fnauc'].shape[0] > 0:
-            data['fntrainset'] = np.asarray(data['fntrainset'])
+            data['fntrainset'] = np.asarray(data['fntrainset']) - lowl
             fnids = np.zeros(data['trainset'].shape[0],dtype=np.int32)
             if np.max(data['fntrainset']) >= fnids.shape[0]:
                 upl = np.where(data['fntrainset'] >= fnids.shape[0])[0][0]
@@ -1665,8 +1705,8 @@ class Plotter(object):
             data['fnidx'] = data['fntrainset']
             data['fntrainset'] = data['trainset'][data['fnidx']]
             data['tnidx'] = np.logical_xor(fnids,1)
-            data['trainset'] = data['trainset'][data['tnidx']]
-            
+            #data['trainset'] = data['trainset'][data['tnidx']]
+
         #Round AUC to 2 decimal places
         np.around(data['auc'],2,data['auc'])
 
@@ -1890,12 +1930,19 @@ class Plotter(object):
                     print("Requested metric not available ({}) in experiment {}".format(metric,k))
                     exp_n -= 1
                     continue
-                if (auc_only and data[k]['auc'].shape[0] > 0) or not 'fntrainset' in data[k]:
-                    max_samples = min(max_samples,len(data[k]['trainset']))
-                elif not auc_only and not metric.startswith('fn'):
-                    max_samples = min(max_samples,len(data[k]['trainset']))
-                elif not auc_only: #data[k][metric].shape[0] > 0:
-                    max_samples = min(max_samples,len(data[k]['fntrainset']))
+
+                if metric.endswith('time') and 'tnidx' in data[k]:
+                    #In time metrics, we use TN points
+                    max_samples = min(max_samples,len(np.where(data[k]['tnidx'])[0]))
+                else:
+                    max_samples = min(max_samples,len(data[k][metric]))
+                
+                #if (auc_only and data[k]['auc'].shape[0] > 0) or not 'fntrainset' in data[k]:
+                #    max_samples = min(max_samples,len(data[k]['trainset']))
+                #elif not auc_only and not metric.startswith('fn'):
+                #    max_samples = min(max_samples,len(data[k]['trainset']))
+                #elif not auc_only: #data[k][metric].shape[0] > 0:
+                #    max_samples = min(max_samples,len(data[k]['fntrainset']))
 
             if max_samples == np.inf:
                 return (None,None,None)
@@ -1907,22 +1954,29 @@ class Plotter(object):
                     continue
                 
                 if auc_only and data[k]['auc'].shape[0] > 0:
-                    dd = mvalues.shape[1] - data[k]['auc'].shape[0]
-                    trainset = data[k]['trainset']
+                    trainset = data[k]['trainset'][data[k]['tnidx']] if 'tnidx' in data[k] else data[k]['trainset']
+                    dd = mvalues.shape[1] - trainset.shape[0]
+                    #trainset = data[k]['trainset']
                     if dd > 0:
-                        print("Wrong dimensions. Expected {} points in experiment {} but got {}".format(mvalues.shape[1],k,data[k]['auc'].shape[0]))
-                        mvalues = np.delete(mvalues,mvalues.shape[1] - 1,axis=1)
-                        trainset = trainset[:-1]
+                        print("Wrong dimensions. Got {} points in experiment {} but expected {}".format(mvalues.shape[1],k,trainset.shape[0]))
+                        mvalues = np.delete(mvalues,mvalues.shape[1] - dd,axis=1)
+                        trainset = trainset[:-dd]
                         max_samples -= 1
                     mvalues[i] = data[k]['auc'][:max_samples]
-                if not auc_only and data[k][metric].shape[0] > 0:                    
-                    trainset = data[k]['fntrainset'] if metric.startswith('fn') else data[k]['trainset']
-                    tdata = data[k][metric][:max_samples]
-                    #(_,_),(_,tdata) = self.return_fndata(data[k],metric,False)
+                if not auc_only and data[k][metric].shape[0] > 0:
+                    if metric.startswith('fn'):
+                        trainset = data[k]['fntrainset']
+                    else:
+                        trainset = data[k]['trainset'][data[k]['tnidx']] if 'tnidx' in data[k] else data[k]['trainset']
+                    #Time metrics exist in all iterations, we separate TN and FN metrics here
+                    if metric.endswith('time'):
+                        tdata = data[k][metric][data[k]['tnidx']] if 'tnidx' in data[k] else data[k][metric][:max_samples]
+                    else:
+                        tdata = data[k][metric][:max_samples]
                     if not tdata is None:
-                        dd = mvalues.shape[1] - tdata.shape[0]
+                        dd = mvalues.shape[1] - trainset.shape[0]
                         if dd > 0:
-                            print("Wrong dimensions. Expected {} points in experiment {} but got {}".format(mvalues.shape[1],k,tdata.shape[0]))
+                            print("Wrong dimensions. There are {} points in experiment {} but expected {}".format(mvalues.shape[1],k,trainset.shape[0]))
                             mvalues = np.delete(mvalues,mvalues.shape[1] - dd,axis=1)
                             trainset = trainset[:-dd]
                             max_samples -= 1
@@ -1951,7 +2005,7 @@ class Plotter(object):
         #Return mean and STD dev
         if auc_only:
             d = (trainset[:max_samples],np.mean(mvalues.transpose(),axis=1),calc_ci(mvalues.transpose(),ci),"AUC",color)
-            print("Max AUC: {:1.3f}; Mean AUC ({} acquisitions): {:1.3f}".format(np.max(d[1]), d[1].shape[0],np.mean(d[1])))
+            print("Max AUC: {:1.3f}; Min AUC: {:1.3f}; Mean AUC ({} acquisitions): {:1.3f}".format(np.max(d[1]), np.min(d[1]), d[1].shape[0],np.mean(d[1])))
             return [d]
         else:
             for m in stats:
@@ -1961,7 +2015,7 @@ class Plotter(object):
                     continue
                 d = (trainset[:max_samples],np.mean(mvalues.transpose(),axis=1),calc_ci(mvalues.transpose(),ci),m.upper(),color)
                 stats[m] = d
-                print("Max {0}: {1:1.3f}; Mean {0} ({2} acquisitions): {3:1.3f}".format(m,np.max(d[1]),d[1].shape[0],np.mean(d[1])))
+                print("Max {0}: {1:1.3f}; Min {0}: {4:1.3f}; Mean {0} ({2} acquisitions): {3:1.3f}".format(m,np.max(d[1]),d[1].shape[0],np.mean(d[1]),np.min(d[1])))
             return stats
                                                                                                               
     
@@ -1980,16 +2034,20 @@ if __name__ == "__main__":
         help='ytick interval.', default=200,required=False)
     parser.add_argument('-ncols', dest='ncols', type=int, 
         help='# of columns in label box.', default=2,required=False)
-    parser.add_argument('-lloc', dest='lloc', type=int, 
+    parser.add_argument('-lloc', dest='lloc', type=float, nargs='+',
         help='Location of label box.', default=0,required=False)
     parser.add_argument('-maxx', dest='maxx', type=int, 
         help='Plot maximum X.', default=None,required=False)
+    parser.add_argument('-minx', dest='minx', type=int, 
+        help='Plot minimum X.', default=None,required=False)    
     parser.add_argument('-maxy', dest='maxy', type=float, 
         help='Plot maximum Y.', default=0.0,required=False)
     parser.add_argument('-miny', dest='miny', type=float, 
         help='Plot maximum Y.', default=0.0,required=False)
     parser.add_argument('-t', dest='title', type=str,default='', 
         help='Figure title.')
+    parser.add_argument('-lsize', dest='lsize', type=int, 
+        help='Legend font size.', default=21,required=False)
     
     ##Multiline SLURM parse
     parser.add_argument('--multi', action='store_true', dest='multi', default=False, 
@@ -2102,7 +2160,16 @@ if __name__ == "__main__":
     if config.sdir is None or not os.path.isdir(config.sdir):
         print("Directory not found: {}".format(config.sdir))
         sys.exit(1)
-        
+
+    if isinstance(config.lloc,list):
+        if len(config.lloc) == 1:
+            config.lloc = int(config.lloc[0])
+        elif len(config.lloc) == 2:
+            config.lloc = tuple(config.lloc)
+        else:
+            print("Too many arguments for -lloc")
+            sys.exit(1)
+            
     if config.multi and not (config.stats or config.debug):
         if config.sdir is None:
             print("You should specify an experiment directory (use -sd option).")
@@ -2117,10 +2184,10 @@ if __name__ == "__main__":
 
         if not config.metrics is None and len(config.ids) == 1:
             ex_dir = "{}-{}".format(exp_type,str(config.ids[0]))
-            data = p.parseMetrics(p.parseSlurm(ex_dir,config.maxx),config.ids[0],config.metrics)
+            data = p.parseMetrics(p.parseSlurm(ex_dir,maxx=config.maxx,minx=config.minx),config.ids[0],config.metrics)
             p.draw_multilabel(data,config.title,config.xtick,config.metrics,config.labels,config.yscale,config.lloc)
         else:
-            data = p.parseResults(exp_type,config.ids,maxx=config.maxx,concat=config.concat)
+            data = p.parseResults(exp_type,config.ids,maxx=config.maxx,minx=config.minx,concat=config.concat)
             if len(data) == 0:
                 print("Something is wrong with your command options. No data to plot")
                 sys.exit(1)
@@ -2182,7 +2249,7 @@ if __name__ == "__main__":
             print("Your are using duplicated IDs, change these: {}".format(dup))
             #sys.exit()
                 
-        data = p.parseResults(exp_type,config.ids,config.n_exp,config.maxx,config.concat)
+        data = p.parseResults(exp_type,config.ids,config.n_exp,config.maxx,minx=config.minx,concat=config.concat)
         
         if isinstance(config.confidence,list):
             config.confidence = config.confidence[0]
@@ -2219,12 +2286,13 @@ if __name__ == "__main__":
             print("***** Data stats ******\n")
             print("\n".join(["{}: {}".format(k,data[k]) for k in data]))
 
-        if config.auc_only or config.merge:
-            p.draw_stats(data,config.xtick,config.auc_only,config.labels,config.spread,config.title,
-                             config.colors,yscale=config.yscale,maxy=config.maxy,miny=config.miny,merge=config.merge,lloc=config.lloc)
+        kwargs = {'labels':config.labels,'xticks':config.xtick,'auc':config.auc_only,'colors':config.colors,'title':config.title,'lsize':config.lsize,
+                          'maxy':config.maxy,'miny':config.miny,'scale':config.yscale,'merge':config.merge,'lloc':config.lloc,'spread':config.spread}
+        if config.auc_only or (config.merge and 'auc' in config.metrics):
+            p.draw_stats(data,**kwargs)
         else:
-            p.draw_time_stats(data,config.xtick,config.auc_only,config.metrics,config.labels,config.spread,
-                                  config.title,config.colors,yscale=config.yscale,maxy=config.maxy,miny=config.miny,merge=config.merge,lloc=config.lloc)
+            kwargs['metrics'] = config.metrics
+            p.draw_time_stats(data,**kwargs)
 
         if config.merge and config.concat:
             print("WARNING: Concatenation and Merging together!!")
@@ -2289,7 +2357,7 @@ if __name__ == "__main__":
             
         p = Plotter(ncols=config.ncols)
 
-        data = p.parseResults(exp_type,config.ids,config.n_exp,config.maxx,config.concat,wsi=True,ncf=config.ncf)
+        data = p.parseResults(exp_type,config.ids,config.n_exp,config.maxx,minx=config.minx,concat=config.concat,wsi=True,ncf=config.ncf)
 
         p.draw_wsi_stat(data,config.title,config.labels,config.metrics,config.colors,config.ytick,config.xtick,config.err_bar)
 
