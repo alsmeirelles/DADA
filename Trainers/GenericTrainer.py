@@ -360,9 +360,6 @@ class Trainer(object):
                 epad += 1
         else:
             epad = 1
-            
-        if self._verbose > 0:
-            print("Epoch correction index: {}".format(epad))
 
         sw_thread = threading.Thread(target=self._save_weights,name='save_weights',args=(model,single,parallel,clear_sess,save_numpy))
         sw_thread.start()

@@ -401,7 +401,7 @@ class ActiveLearningTrainer(Trainer):
         Adds items to training and validation sets, according to split ratio defined in configuration. 
         Test set is fixed in the begining.
 
-        Returns True if acquisition was sucessful
+        Returns True if acquisition was sucessful and param 'return_aq' is False, otherwise return selected patches and updated pool
         """
         from Trainers import ThreadedGenerator
         import gc
@@ -415,6 +415,8 @@ class ActiveLearningTrainer(Trainer):
         kwargs['model'] = model
 
         tmodels = kwargs.get('emodels',None)
+        return_aq = kwargs.get('return_aq',False)
+        single_r = kwargs.get('single_r',False)
         
         #An acquisition function should return a NP array with the indexes of all items from the pool that 
         #should be inserted into training and validation sets
@@ -440,7 +442,7 @@ class ActiveLearningTrainer(Trainer):
             'verbose':self._config.verbose}
 
         #Regenerate pool if defined
-        if self._config.spool > 0 and kwargs['acquisition'] > 0 and ((kwargs['acquisition'] + 1) % (self._config.spool)) == 0:
+        if not single_r and self._config.spool > 0 and kwargs['acquisition'] > 0 and ((kwargs['acquisition'] + 1) % (self._config.spool)) == 0:
             if self._config.spool_f is None:
                 self._refresh_pool(kwargs['acquisition'],model.name)
             else:
@@ -487,7 +489,7 @@ class ActiveLearningTrainer(Trainer):
             sys.exit(1)
             
         #Store acquired patches indexes in pool set
-        if self._config.spool > 0:
+        if not single_r and self._config.spool > 0:
             if self.acq_idx is None:
                 self.acq_idx = self.sample_idx[pooled_idx]
             else:
@@ -497,11 +499,19 @@ class ActiveLearningTrainer(Trainer):
         del(generator)
         
         self.train_x = np.concatenate((self.train_x,self.pool_x[pooled_idx]),axis=0)
-        self.train_y = np.concatenate((self.train_y,self.pool_y[pooled_idx]),axis=0)
+        selected = None
+        if return_aq:
+            selected = self.pool_x[pooled_idx]
         self.pool_x = np.delete(self.pool_x,pooled_idx)
-        self.pool_y = np.delete(self.pool_y,pooled_idx)
+        
+        if not self.pool_y is None:
+            self.train_y = np.concatenate((self.train_y,self.pool_y[pooled_idx]),axis=0)        
+            self.pool_y = np.delete(self.pool_y,pooled_idx)
 
-        return True
+        if return_aq:
+            return (selected,self.pool_x)
+        else:
+            return True
 
 
     def _target_net_train(self,model):

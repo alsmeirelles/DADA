@@ -43,6 +43,9 @@ class _CacheManager(object):
 
         self._multi_load_fd = None
 
+    def __str__(self):
+        return "\n".join(["{}: {}".format(k,self.__locations[k]) for k in self.__locations])
+
     def getLocations(self):
         return self.__locations.copy()
     
@@ -50,7 +53,7 @@ class _CacheManager(object):
         """
         Returns the registered file location (if it is registered)
         """
-
+        
         if fid in self.__locations:
             return self.__locations[fid]
         else:
