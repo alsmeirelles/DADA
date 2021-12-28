@@ -57,10 +57,11 @@ class GenericEnsemble(GenericModel):
 
         @param add_ext <boolean>: add numpy file extension to file name.
         """
+        fp = os.path.split(self.cache_m.fileLocation(self._weightsCache))
         if add_ext:
-            return "{}.npy".format(self.cache_m.fileLocation(self._weightsCache).split('.')[0])
+            return "{}.npy".format(os.path.join(fp[0],fp[1].split('.')[0]))
         else:
-            return self.cache_m.fileLocation(self._weightsCache).split('.')[0]
+            return os.path.join(fp[0],fp[1].split('.')[0])
 
     def get_npmgpu_weights_cache(self,add_ext=False):
         """
@@ -68,10 +69,11 @@ class GenericEnsemble(GenericModel):
 
         @param add_ext <boolean>: add numpy file extension to file name.
         """
+        fp = os.path.split(self.cache_m.fileLocation(self._mgpu_weightsCache))
         if add_ext:
-            return "{}.npy".format(self.cache_m.fileLocation(self._mgpu_weightsCache).split('.')[0])
+            return "{}.npy".format(os.path.join(fp[0],fp[1].split('.')[0]))
         else:
-            return self.cache_m.fileLocation(self._mgpu_weightsCache).split('.')[0]
+            return os.path.join(fp[0],fp[1].split('.')[0])
 
     def adjustWeightCache(self):
             

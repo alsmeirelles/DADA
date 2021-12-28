@@ -136,32 +136,12 @@ class Trainer(object):
         """
         train_generator,val_generator = (None,None)
 
-        ##TODO: this is useless, augmentation should be defined through imgaug and passed to batch generator. ImageDataGenerator
-        ## is not used inside the batch generators anymore
-        if self._config.augment:
-            train_prep = ImageDataGenerator(
-                samplewise_center=self._config.batch_norm,
-                samplewise_std_normalization=self._config.batch_norm,
-                rotation_range=180,
-                width_shift_range=20,
-                height_shift_range=20,
-                zoom_range=.2,
-                #shear_range=.05,
-                horizontal_flip=True,
-                vertical_flip=True,
-                brightness_range=(-20.0,20.0))
-
-            val_prep = ImageDataGenerator(
-                samplewise_center=self._config.batch_norm,
-                samplewise_std_normalization=self._config.batch_norm,
-                brightness_range=(-20.0,20.0))
-        else:
-            train_prep = ImageDataGenerator(
-                samplewise_center=self._config.batch_norm,
-                samplewise_std_normalization=self._config.batch_norm)
-            val_prep = ImageDataGenerator(
-                samplewise_center=self._config.batch_norm,
-                samplewise_std_normalization=self._config.batch_norm)
+        train_prep = ImageDataGenerator(
+            samplewise_center=self._config.batch_norm,
+            samplewise_std_normalization=self._config.batch_norm)
+        val_prep = ImageDataGenerator(
+            samplewise_center=self._config.batch_norm,
+            samplewise_std_normalization=self._config.batch_norm)
 
         if self._config.delay_load or self._config.phi > 1:
             from Trainers import ThreadedGenerator
@@ -360,9 +340,6 @@ class Trainer(object):
                 epad += 1
         else:
             epad = 1
-            
-        if self._verbose > 0:
-            print("Epoch correction index: {}".format(epad))
 
         sw_thread = threading.Thread(target=self._save_weights,name='save_weights',args=(model,single,parallel,clear_sess,save_numpy))
         sw_thread.start()

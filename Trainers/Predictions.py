@@ -241,7 +241,7 @@ class Predictor(object):
                                                 dim=fix_dim,
                                                 batch_size=bsize,
                                                 image_generator=image_generator,
-                                                extra_aug=self._config.augment,
+                                                extra_aug=False, #self._config.augment,
                                                 shuffle=False,
                                                 verbose=self._verbose,
                                                 input_n=self._config.emodels if self._ensemble else 1,

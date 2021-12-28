@@ -58,7 +58,7 @@ def _make_un_generator(**kwargs):
     Mandatory kwargs:
     - config
     - classes: number of classes
-    - fix_fim: image dimensions
+    - fix_dim: image dimensions
     - dps: data points
     """
 
