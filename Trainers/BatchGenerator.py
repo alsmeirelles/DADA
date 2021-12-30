@@ -131,7 +131,7 @@ class GenericIterator(Iterator):
     def applyDataAugmentation(self,batch_x):
         #Additional data augmentation
         if self._aug is None:
-            self._aug = iaa.Sometimes(0.5,iaa.Sequential(
+            self._aug = iaa.Sometimes(0.1,iaa.Sequential(
                                           [iaa.LinearContrast((0.4,1.6)),
                                           iaa.imgcorruptlike.Brightness(severity=2),
                                           iaa.imgcorruptlike.Saturate(severity=2),
@@ -290,8 +290,13 @@ class ThreadedGenerator(GenericIterator):
             
         # calculate dimensions of each data point
         #Should only create the batches of appropriate size
+        if self.extra_aug:
+            dtype = np.uint8
+        else:
+            dtype = np.float32
+
         if not self.shape is None:
-            batch_x = np.zeros(tuple([len(index_array)] + list(self.shape)), dtype=np.uint8)
+            batch_x = np.zeros(tuple([len(index_array)] + list(self.shape)), dtype=dtype)
         else:
             batch_x = None
         y = np.zeros(tuple([len(index_array)]),dtype=int)
@@ -302,7 +307,7 @@ class ThreadedGenerator(GenericIterator):
         futures = {}
 
         for i,j in enumerate(index_array):
-            futures[self._executor.submit(self._thread_run_images,X[j],Y[j],self.keep)] = i
+            futures[self._executor.submit(self._thread_run_images,X[j],Y[j],self.keep,not self.extra_aug)] = i
 
         i=0
         for f in concurrent.futures.as_completed(futures):
@@ -312,7 +317,7 @@ class ThreadedGenerator(GenericIterator):
             if batch_x is None:
                 self.shape = example.shape
                 print("Image batch shape: {}".format(self.shape))
-                batch_x = np.zeros(tuple([len(index_array)] + list(self.shape)),dtype=np.uint8)            
+                batch_x = np.zeros(tuple([len(index_array)] + list(self.shape)),dtype=dtype)            
             batch_x[i] = example
             y[i] = t_y
 
@@ -337,8 +342,8 @@ class ThreadedGenerator(GenericIterator):
         output = (batch_x, keras.utils.to_categorical(y, self.classes))
         return output
 
-    def _thread_run_images(self,t_x,t_y,keep):
-        example = t_x.readImage(keepImg=keep,size=self.dim,verbose=self.verbose,toFloat=False)
+    def _thread_run_images(self,t_x,t_y,keep,toFloat):
+        example = t_x.readImage(keepImg=keep,size=self.dim,verbose=self.verbose,toFloat=toFloat)
             
         if not self.image_generator is None:
             example = self.image_generator.random_transform(example,self.seed)

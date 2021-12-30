@@ -243,7 +243,7 @@ class EFInception(Inception):
                 print("Found previous learning rate: {0}".format(l_rate))
         
         #opt = optimizers.SGD(lr=l_rate, decay=1.5e-4, momentum=0.9, nesterov=True)
-        l_rate = self.rescale('lr',l_rate)
+        #l_rate = self.rescale('lr',l_rate)
         opt = optimizers.Adam(lr = l_rate)
         #opt = optimizers.Adadelta(lr=l_rate)
 

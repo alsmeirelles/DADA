@@ -264,12 +264,13 @@ def background(pat):
     """
     Foreground/background detection according to article:
     Spatial Organization And Molecular Correlation Of Tumor-Infiltrating Lymphocytes Using Deep Learning On Pathology Images
+    Original whiteness threshold is 14
 
     @param pat <np.array>: tile as a numpy array.
     """
     whiteness = (np.std(pat[:,:,0]) + np.std(pat[:,:,1]) + np.std(pat[:,:,2])) / 3.0
     
-    if whiteness < 14:
+    if whiteness < 18:
         return True
     else:
         return False

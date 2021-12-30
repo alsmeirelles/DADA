@@ -146,7 +146,11 @@ class GenericEnsemble(GenericModel):
                  layers = [model.get_layer('EM{}-{}'.format(e,'feature')).output for e in range(self._config.emodels)]
             x = Concatenate()(layers)
         else:
-            x = model.get_layer('feature').output
+            if parallel:
+                feature_l  = model.get_layer(self.name).get_layer('feature')
+                x = feature_l.output
+            else:
+                x = model.get_layer('feature').output
 
         if K.ndim(x) > 2:
             x = Flatten()(x)
