@@ -190,11 +190,15 @@ class SingleGenerator(GenericIterator):
         #For debuging
         if self.verbose > 1:
             print(" index_array: {0}".format(index_array))
-            
+
+        if self.extra_aug:
+            dtype = np.uint8
+        else:
+            dtype = np.float32
         # calculate dimensions of each data point
         #Should only create the batches of appropriate size
         if not self.shape is None:
-            batch_x = np.zeros(tuple([len(index_array)] + list(self.shape)), dtype=np.float32)
+            batch_x = np.zeros(tuple([len(index_array)] + list(self.shape)), dtype=dtype)
         else:
             batch_x = None
         y = np.zeros(tuple([len(index_array)]),dtype=int)
@@ -208,13 +212,13 @@ class SingleGenerator(GenericIterator):
 
             #If not an ndarray, readimage
             if not isinstance(t_x,np.ndarray):
-                example = t_x.readImage(size=self.dim,verbose=self.verbose)
+                example = t_x.readImage(size=self.dim,verbose=self.verbose,toFloat=not self.extra_aug)
             else:
                 example = t_x
             
             if batch_x is None:
                 self.shape = example.shape
-                batch_x = np.zeros(tuple([len(index_array)] + list(self.shape)),dtype=np.float32)
+                batch_x = np.zeros(tuple([len(index_array)] + list(self.shape)),dtype=dtype)
 
             # add point to x_batch and diagnoses to y
             batch_x[i] = example
@@ -326,12 +330,13 @@ class ThreadedGenerator(GenericIterator):
         #Apply extra augmentation
         if self.extra_aug:
             batch_x = self.applyDataAugmentation(batch_x)
-        
+            batch_x = batch_x.astype(np.float32)
+            batch_x /= 255
+            
         del(futures)
+
         #Center data
         #batch_x -= self.mean
-        #Normalize data pixels
-        #batch_x /= 255
 
         if self.variable_shape:
             self.shape = None
