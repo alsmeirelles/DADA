@@ -131,11 +131,11 @@ class GenericIterator(Iterator):
     def applyDataAugmentation(self,batch_x):
         #Additional data augmentation
         if self._aug is None:
-            self._aug = iaa.Sometimes(0.1,iaa.Sequential(
+            self._aug = iaa.Sometimes(0.3,iaa.Sequential(
                                           [iaa.LinearContrast((0.4,1.6)),
                                           iaa.imgcorruptlike.Brightness(severity=2),
                                           iaa.imgcorruptlike.Saturate(severity=2),
-                                          iaa.Rotate((0,22.5)),
+                                          #iaa.Rotate((0,22.5)),
                                           iaa.Fliplr(),
                                           iaa.Flipud()])
                                           )
@@ -325,14 +325,15 @@ class ThreadedGenerator(GenericIterator):
             batch_x[i] = example
             y[i] = t_y
 
-        #Always normalize
-        batch_x = self.image_generator.standardize(batch_x)
         #Apply extra augmentation
-        if self.extra_aug:
-            batch_x = self.applyDataAugmentation(batch_x)
-            batch_x = batch_x.astype(np.float32)
-            batch_x /= 255
-            
+        #if self.extra_aug:
+        #    batch_x = self.applyDataAugmentation(batch_x)
+        #    batch_x = batch_x.astype(np.float32)
+        #    batch_x /= 255
+        
+        #Normalize if defined in config
+        batch_x = self.image_generator.standardize(batch_x)
+
         del(futures)
 
         #Center data
@@ -349,9 +350,10 @@ class ThreadedGenerator(GenericIterator):
 
     def _thread_run_images(self,t_x,t_y,keep,toFloat):
         example = t_x.readImage(keepImg=keep,size=self.dim,verbose=self.verbose,toFloat=toFloat)
-            
-        if not self.image_generator is None:
-            example = self.image_generator.random_transform(example,self.seed)
-            #example = self.image_generator.standardize(example)
+        
+        if self.extra_aug:
+            example = self.applyDataAugmentation(example)
+            example = example.astype(np.float32)
+            example /= 255
 
         return (example,t_y)
