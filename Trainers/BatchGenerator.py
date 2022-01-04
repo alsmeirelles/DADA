@@ -131,14 +131,13 @@ class GenericIterator(Iterator):
     def applyDataAugmentation(self,batch_x):
         #Additional data augmentation
         if self._aug is None:
-            self._aug = iaa.Sometimes(0.1,iaa.Sequential(
-                                          [#iaa.LinearContrast((0.4,1.6)),
-                                          #iaa.imgcorruptlike.Brightness(severity=2),
-                                          #iaa.imgcorruptlike.Saturate(severity=2),
+            self._aug = iaa.Sequential([iaa.Sometimes(0.1,iaa.Sequential([iaa.AddToBrightness((-30,30)),iaa.AddToSaturation((-50,50)),iaa.LinearContrast((0.4,1.6))])),
                                           #iaa.Rotate((0,22.5)),
-                                          iaa.Fliplr(),
-                                          iaa.Flipud()])
-                                          )
+                                          iaa.Sometimes(0.2,iaa.Sequential([iaa.Fliplr(),
+                                            iaa.Flipud()]))
+                                            ])
+                                        
+
         if len(batch_x.shape) == 4:
             return self._aug(images=batch_x)
         else:
