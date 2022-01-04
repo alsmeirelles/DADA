@@ -56,10 +56,6 @@ class PImage(SegImage):
                 print("Reading image: {0}".format(self._path))
                 
             data = io.imread(self._path);
-
-            #Convert data to float and also normalizes between [0,1]
-            if toFloat:
-                data = skimage.img_as_float32(data)
             
             if(data.shape[2] > 3): # remove the alpha
                 data = data[:,:,0:3];
@@ -68,6 +64,12 @@ class PImage(SegImage):
                 if self._verbose > 1:
                     print("Resizing image {0} from {1} to {2}".format(os.path.basename(self._path),data.shape,size))
                 data = skimage.transform.resize(data,size)
+
+            #Convert data to float and also normalizes between [0,1]
+            if toFloat:
+                data = skimage.img_as_float32(data)
+            else:
+                data = skimage.img_as_ubyte(data)
                 
             h,w,c = data.shape
             self._dim = (w,h,c)
