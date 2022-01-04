@@ -131,15 +131,18 @@ class GenericIterator(Iterator):
     def applyDataAugmentation(self,batch_x):
         #Additional data augmentation
         if self._aug is None:
-            self._aug = iaa.Sometimes(0.3,iaa.Sequential(
-                                          [iaa.LinearContrast((0.4,1.6)),
-                                          iaa.imgcorruptlike.Brightness(severity=2),
-                                          iaa.imgcorruptlike.Saturate(severity=2),
+            self._aug = iaa.Sometimes(0.1,iaa.Sequential(
+                                          [#iaa.LinearContrast((0.4,1.6)),
+                                          #iaa.imgcorruptlike.Brightness(severity=2),
+                                          #iaa.imgcorruptlike.Saturate(severity=2),
                                           #iaa.Rotate((0,22.5)),
                                           iaa.Fliplr(),
                                           iaa.Flipud()])
                                           )
-        return self._aug(images=batch_x)
+        if len(batch_x.shape) == 4:
+            return self._aug(images=batch_x)
+        else:
+            return self._aug(images=[batch_x])
             
 
 class SingleGenerator(GenericIterator):
@@ -294,13 +297,8 @@ class ThreadedGenerator(GenericIterator):
             
         # calculate dimensions of each data point
         #Should only create the batches of appropriate size
-        if self.extra_aug:
-            dtype = np.uint8
-        else:
-            dtype = np.float32
-
         if not self.shape is None:
-            batch_x = np.zeros(tuple([len(index_array)] + list(self.shape)), dtype=dtype)
+            batch_x = np.zeros(tuple([len(index_array)] + list(self.shape)), dtype=np.float32)
         else:
             batch_x = None
         y = np.zeros(tuple([len(index_array)]),dtype=int)
@@ -321,16 +319,10 @@ class ThreadedGenerator(GenericIterator):
             if batch_x is None:
                 self.shape = example.shape
                 print("Image batch shape: {}".format(self.shape))
-                batch_x = np.zeros(tuple([len(index_array)] + list(self.shape)),dtype=dtype)            
+                batch_x = np.zeros(tuple([len(index_array)] + list(self.shape)),dtype=np.float32)            
             batch_x[i] = example
             y[i] = t_y
 
-        #Apply extra augmentation
-        #if self.extra_aug:
-        #    batch_x = self.applyDataAugmentation(batch_x)
-        #    batch_x = batch_x.astype(np.float32)
-        #    batch_x /= 255
-        
         #Normalize if defined in config
         batch_x = self.image_generator.standardize(batch_x)
 
@@ -350,9 +342,9 @@ class ThreadedGenerator(GenericIterator):
 
     def _thread_run_images(self,t_x,t_y,keep,toFloat):
         example = t_x.readImage(keepImg=keep,size=self.dim,verbose=self.verbose,toFloat=toFloat)
-        
+       
         if self.extra_aug:
-            example = self.applyDataAugmentation(example)
+            example = self.applyDataAugmentation(example)[0]
             example = example.astype(np.float32)
             example /= 255
 
