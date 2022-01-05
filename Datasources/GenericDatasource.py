@@ -224,7 +224,6 @@ class GenericDS(ABC):
 
         if reload_data:
             X,Y = self.run_dir(self.path)
-            reload_data = False
             
         if reshuffle and not reload_data:
             X,Y = self._shuffle(X,Y)
