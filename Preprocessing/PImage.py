@@ -80,7 +80,7 @@ class PImage(SegImage):
         else:
             if self._verbose > 1:
                 print("Data already loaded:\n - {0}".format(self._path))
-            if not toFloat and self._data.dtype != np.unit8:
+            if not toFloat and self._data.dtype != np.uint8:
                 self._data = skimage.img_as_ubyte(self._data)
             data = self._data
 
