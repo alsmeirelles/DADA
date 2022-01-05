@@ -1671,8 +1671,8 @@ class Plotter(object):
                 print("Slurm file ({}) does not have that many samples ({}). Maximum is {}.".format(slurm_path,maxx,np.max(data['trainset'])))
                 #sys.exit(1)
             else:
-                upl = np.where(data['trainset'] >= maxx)[0][0]
-                upl += 1
+                upl = np.where(data['trainset'] > maxx)[0][0]
+                #upl += 1
         if not minx is None:
             lowl = np.where(data['trainset'] < minx)[0][0]
             lowl += 1
@@ -1697,9 +1697,7 @@ class Plotter(object):
             if np.max(data['fntrainset']) >= fnids.shape[0]:
                 upl = np.where(data['fntrainset'] >= fnids.shape[0])[0][0]
                 data['fntrainset'] = data['fntrainset'][:upl] #Don't use indexes already removed by maxx
-                #data['auc'] = data['auc'][:upl]
                 data['fnauc'] = data['fnauc'][:upl]
-                #data['accuracy'] = data['accuracy'][:upl]
                 data['fnaccuracy'] = data['fnaccuracy'][:upl]
             fnids[data['fntrainset']] = 1
             data['fnidx'] = data['fntrainset']
@@ -1959,9 +1957,8 @@ class Plotter(object):
                     #trainset = data[k]['trainset']
                     if dd > 0:
                         print("Wrong dimensions. Got {} points in experiment {} but expected {}".format(mvalues.shape[1],k,trainset.shape[0]))
-                        mvalues = np.delete(mvalues,mvalues.shape[1] - dd,axis=1)
-                        trainset = trainset[:-dd]
-                        max_samples -= 1
+                        mvalues = np.delete(mvalues,np.arange(mvalues.shape[1] - dd,mvalues.shape[1]),axis=1)
+                        max_samples -= dd
                     mvalues[i] = data[k]['auc'][:max_samples]
                 if not auc_only and data[k][metric].shape[0] > 0:
                     if metric.startswith('fn'):
@@ -1977,9 +1974,9 @@ class Plotter(object):
                         dd = mvalues.shape[1] - trainset.shape[0]
                         if dd > 0:
                             print("Wrong dimensions. There are {} points in experiment {} but expected {}".format(mvalues.shape[1],k,trainset.shape[0]))
-                            mvalues = np.delete(mvalues,mvalues.shape[1] - dd,axis=1)
+                            mvalues = np.delete(mvalues,np.arange(mvalues.shape[1] - dd,mvalues.shape[1]),axis=1)
                             trainset = trainset[:-dd]
-                            max_samples -= 1
+                            max_samples -= dd
                         mvalues[i,:tdata.shape[0]] = tdata[:mvalues[i].shape[0]]
                     else:
                         mvalues[i] = data[k][metric][:max_samples]
