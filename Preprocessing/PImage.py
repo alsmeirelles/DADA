@@ -55,10 +55,10 @@ class PImage(SegImage):
             if self._verbose > 1:
                 print("Reading image: {0}".format(self._path))
                 
-            data = io.imread(self._path);
+            data = io.imread(self._path)
             
             if(data.shape[2] > 3): # remove the alpha
-                data = data[:,:,0:3];
+                data = data[:,:,0:3]
                 
             if not size is None and data.shape != size:
                 if self._verbose > 1:
@@ -80,6 +80,8 @@ class PImage(SegImage):
         else:
             if self._verbose > 1:
                 print("Data already loaded:\n - {0}".format(self._path))
+            if not toFloat and self._data.dtype != np.unit8:
+                self._data = skimage.img_as_ubyte(self._data)
             data = self._data
 
         return data
