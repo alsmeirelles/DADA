@@ -10,7 +10,7 @@
 #echo commands to stdout
 #set -x
 
-DIRID="AL/AL-330"
+DIRID="AL/AL-336"
 cd /ocean/projects/asc130006p/alsm/active-learning/Segframe
 
 echo '[VIRTUALENV]'

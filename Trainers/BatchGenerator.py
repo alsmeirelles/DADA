@@ -137,7 +137,7 @@ class GenericIterator(Iterator):
                                           #iaa.Rotate((0,22.5)),
                                           iaa.Fliplr(),
                                           iaa.Flipud(),
-                                          iaa.KeepSizeByResize(iaa.CenterCropToFixedSize(width=self.shape[0]-20,height=self.shape[1]-20),keep_size=False)
+                                          iaa.KeepSizeByResize(iaa.CenterCropToFixedSize(width=self.dim[0]-20,height=self.dim[1]-20))
                                             ])
                                         
 
