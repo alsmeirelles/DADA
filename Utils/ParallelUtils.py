@@ -18,7 +18,7 @@ def multiprocess_run(exec_function,exec_params,data,cpu_count,pbar,step_size,out
     If output should be splited based on inputs, it will be a dictionary and data should be hashable
 
     @param exec_function <function>
-    @param exec_params <tuple>
+    @param exec_params <tuple> or None
     @param data <iterable>
     @param cpu_count <int>: use this number of cores
     @param pbar <boolean>: user progress bars
@@ -42,6 +42,9 @@ def multiprocess_run(exec_function,exec_params,data,cpu_count,pbar,step_size,out
         l = tqdm(desc="Processing {0}...".format(txt_label),total=step,position=0)
    
     datapoints = np.asarray(data)
+    if exec_params is None:
+        exec_params = ()
+        
     for i in range(step):
         # get a subset of datapoints
         end_idx = step_size

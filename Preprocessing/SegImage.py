@@ -59,6 +59,13 @@ class SegImage(ABC):
         Should return dimensions as a tuple of (widthd,height,channels)
         """
         pass
+
+    @abstractmethod
+    def saveImg(self,dst,arr,**kwargs):
+        """
+        Saves image to file according to underlying image library
+        """
+        pass    
     
     def setKeepImg(self,keep):
         """

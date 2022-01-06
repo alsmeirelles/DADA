@@ -130,4 +130,9 @@ class PImage(SegImage):
                 print("[PImage] Image has incompatible coordinates: {}".format(self._coord))
             return None
 
+    def saveImg(self,dst,arr,**kwargs):
+        """
+        Save image to file. Check skimage.io.imsave for optional parameters.
+        """
+        io.imsave(dst,arr,plugin='pil',**kwargs)
     
