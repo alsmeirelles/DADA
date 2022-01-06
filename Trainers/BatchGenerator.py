@@ -131,7 +131,7 @@ class GenericIterator(Iterator):
     def applyDataAugmentation(self,batch_x):
         #Additional data augmentation
         if self._aug is None:
-            self._aug = iaa.Sequential([iaa.Sometimes(0.1,iaa.Sequential([iaa.AddToBrightness((-30,30)),iaa.AddToSaturation((-50,50)),iaa.LinearContrast((0.4,1.6))])),
+            self._aug = iaa.Sequential([iaa.Sometimes(0.2,iaa.Sequential([iaa.AddToBrightness((-30,30)),iaa.AddToSaturation((-50,50)),iaa.LinearContrast((0.4,1.6))])),
                                           #iaa.Rotate((0,22.5)),
                                           iaa.Sometimes(0.2,iaa.Sequential([iaa.Fliplr(),
                                             iaa.Flipud()]))
@@ -341,7 +341,7 @@ class ThreadedGenerator(GenericIterator):
 
     def _thread_run_images(self,t_x,t_y,keep,toFloat):
         example = t_x.readImage(keepImg=keep,size=self.dim,verbose=self.verbose,toFloat=toFloat)
-       
+
         if self.extra_aug:
             example = self.applyDataAugmentation(example)[0]
             example = example.astype(np.float32)
