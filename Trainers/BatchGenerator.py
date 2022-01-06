@@ -344,7 +344,7 @@ class ThreadedGenerator(GenericIterator):
 
     def _thread_run_images(self,t_x,t_y,keep,toFloat):
         example = t_x.readImage(keepImg=keep,size=self.dim,verbose=self.verbose,toFloat=toFloat)
-       
+
         if self.extra_aug:
             example = self.applyDataAugmentation(example)[0]
             example = example.astype(np.float32)
