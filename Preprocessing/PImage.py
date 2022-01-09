@@ -12,14 +12,18 @@ class PImage(SegImage):
     """
     Represents any image handled by skimage.
     """
-    def __init__(self,path,keepImg=False,origin=None,coord=None,verbose=0):
+    def __init__(self,path,arr=None,keepImg=False,origin=None,coord=None,verbose=0):
         """
         @param path <str>: path to image
+        @param arr <ndarray>: numpy array with image data
         @param keepImg <bool>: keep image data in memory
         @param origin <str>: current image is originated from origin
         @param coord <tuple>: coordinates in original image
         """
-        super().__init__(path,keepImg,verbose)
+        if not arr is None and isinstance(arr,np.ndarray):
+            super().__init__(path,arr,keepImg,verbose)
+        else:
+            super().__init__(path,keepImg,verbose)
         self._coord = coord
         self._origin = origin
 
@@ -130,9 +134,14 @@ class PImage(SegImage):
                 print("[PImage] Image has incompatible coordinates: {}".format(self._coord))
             return None
 
-    def saveImg(self,dst,arr,**kwargs):
+    def saveImg(self,dst=None,arr=None,**kwargs):
         """
         Save image to file. Check skimage.io.imsave for optional parameters.
         """
-        io.imsave(dst,arr,plugin='pil',**kwargs)
+        if dst is None:
+            dst = self._path
+        if not arr is None:
+            io.imsave(dst,arr,plugin='pil',**kwargs)
+        elif not self._data is None:
+            io.imsave(dst,self._data,plugin='pil',**kwargs)
     

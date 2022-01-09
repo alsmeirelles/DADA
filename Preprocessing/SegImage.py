@@ -11,12 +11,12 @@ class SegImage(ABC):
     @param path <str>: path to image file
     @param keepImg <bool>: keep image data in memory until ordered to release it
     """
-    def __init__(self,path,keepImg=False,verbose=0):
+    def __init__(self,path,arr=None,keepImg=False,verbose=0):
         
         self._path = path
         self._verbose = verbose
         self._keep = keepImg
-        self._data = None
+        self._data = arr
         self._dim = None
 
     def __str__(self):

@@ -12,7 +12,7 @@ from Datasources import GenericDatasource as gd
 from Preprocessing import PImage
 from Utils import CacheManager
 
-class LDir(gd.GenericDS):
+class AqSet(gd.GenericDS):
     """
     Class that parses labels from file names according to the following examples:
     TCGA-63-A5MW-01Z-00-DX1_42058_8792_422_89_299_[0,1].png    
@@ -49,7 +49,7 @@ class LDir(gd.GenericDS):
                 continue
             w = "-".join([m.group(g) for g in ('tcga','tss','part','sample','ddigit','plate')])
             coord = (m.group('xcoord'),m.group('ycoord'))
-            seg = PImage(os.path.join(t_path,f),keepImg=self._keep,origin=w,coord=coord,verbose=self._verbose)
+            seg = PImage(os.path.join(d,f),keepImg=self._keep,origin=w,coord=coord,verbose=self._verbose)
             label = int(m.group('label'))
             if label < 1:
                 label = 0
@@ -58,5 +58,12 @@ class LDir(gd.GenericDS):
             
         return (t_x,t_y)
 
+    def change_root(self,s,d):
+        """
+        s -> original path
+        d -> change location to d
+        """
+        components = tuple(s.split(os.path.sep)[-2:])
+        relative_path = os.path.join(*components)
 
-    def _run_threaded(self,t_path,w):
+        return os.path.join(d,relative_path)

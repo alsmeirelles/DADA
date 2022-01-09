@@ -32,8 +32,7 @@ class GenericDS(ABC):
         self._verbose = config.verbose if not config is None else 0
         self._pbar = config.progressbar if not config is None else False
         self._config = config
-
-
+                
     @abstractmethod
     def _load_metadata_from_dir(self,d):
         pass
