@@ -34,11 +34,15 @@ def _run_multiprocess(data,dst,mag,dim):
         p = data[0][pk]
         dst_dir = os.path.join(dst,os.path.basename(os.path.dirname(p.getPath())))
         name = p.getImgName()
-        if not os.path.isdir(dst_dir):
-            os.mkdir(dst_dir)
+        try:
+            if not os.path.isdir(dst_dir):
+                os.mkdir(dst_dir)
+        except FileExistsError:
+            continue
         patch = p.readImage(size=dim,toFloat=False)
         X.append(p)
         Y.append(data[1][pk])
+        p.saveImg(dst=os.path.join(dst_dir,os.path.basename(p.getPath())),arr=patch)
         for k in range(mag):
             pa_data = aug(images=[patch])[0]
             pa_name = "{}-v{}_{}.png".format(p.getImgName()[:-2],k,p.getImgName()[-1:])
@@ -49,7 +53,7 @@ def _run_multiprocess(data,dst,mag,dim):
 
     return X,Y
     
-def generate_augmentation(data,dst,mag,dim):
+def generate_augmentation(data,dst,mag,dim,cpu):
 
     if not os.path.isdir(dst):
         os.mkdir(dst)
@@ -59,9 +63,9 @@ def generate_augmentation(data,dst,mag,dim):
     z = list(zip(z1,z2))
     X,Y = multiprocess_run(_run_multiprocess,(dst,mag,dim),z,
                                pbar=True,
-                               cpu_count=4,
+                               cpu_count=cpu,
                                output_dim=2,
-                               step_size=int(len(data[0])/4),
+                               step_size=int(len(data[0])/cpu),
                                txt_label='augmentations')
 
     print("Done generating.\n - Total patches: {}".format(len(X)))
@@ -82,7 +86,7 @@ if __name__ == "__main__":
     parser.add_argument('-mag', dest='mag', type=int, 
         help='Number of new patches each original image will generate', default=5,required=False)
     parser.add_argument('-sample', dest='sample', type=int, 
-        help='Get a sample of the dataset to be augmented', default=100,required=False)
+        help='Get a sample of the dataset to be augmented', default=1.0,required=False)
     parser.add_argument('-tdim', dest='tdim', nargs='+', type=int, 
         help='Patch width and heigth, optionally inform the number of channels.', 
         default=None, metavar=('Width', 'Height'))
@@ -96,7 +100,9 @@ if __name__ == "__main__":
         help='Print progress bars of processing execution.')
     parser.add_argument('-cache', dest='cache', type=str,default='cache', 
         help='Keeps caches in this directory',required=False)
-    
+    parser.add_argument('-cpu', dest='cpu_count', type=int, 
+        help='Number of CPU cores available (Default: 1).', default=1)
+
     config, unparsed = parser.parse_known_args()
 
     config.spool = 0
@@ -124,4 +130,4 @@ if __name__ == "__main__":
     if config.out_dir is None:
         config.out_dir = config.ds
         
-    generate_augmentation(sampled[:2],config.out_dir,config.mag,config.tdim)
+    generate_augmentation(sampled[:2],config.out_dir,config.mag,config.tdim,config.cpu_count)
