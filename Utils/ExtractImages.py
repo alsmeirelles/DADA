@@ -14,7 +14,7 @@ if __name__ == "__main__":
 
     #Parse input parameters
     arg_groups = []
-    parser = argparse.ArgumentParser(description='Dataset manipulation.')
+    parser = argparse.ArgumentParser(description='Dataset manipulation. Use to extract a sample of patches from the dataset, according to cancer type.')
 
     parser.add_argument('-sd', dest='sdir', type=str,default=None, required=True,
         help='Source directory (path to patches).')

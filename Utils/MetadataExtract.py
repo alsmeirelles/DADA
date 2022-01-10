@@ -97,7 +97,6 @@ def _process_test_images(config):
 
     files = os.listdir(config.sdir)
 
-    dsfiles = {}
     testfile = '{}-testset.pik'.format(config.ds)
     fX = None
     if not testfile in files:
@@ -110,8 +109,11 @@ def _process_test_images(config):
             X,Y,_ = pickle.load(fd)
             fX = np.asarray(X)
             del(X)
-        
-        tx = fX[tset[:config.test]]
+
+        if config.test > 0:
+            tx = fX[tset[:config.test]]
+        else:
+            tx = fX[tset]
 
     return tx
         
@@ -805,14 +807,32 @@ def process_wsi_plot(config,acqs):
     slides = wsis.keys()
     print("Slides ({}): {}".format(len(slides),"\n".join([" - {}".format(sn) for sn in slides])))
 
-
+def process_test_metadata(config):
+    """Saves test patches used in an experiment in out_dir"""
+        
+    ts_imgs = _process_test_images(config)
+    copy_to = os.path.join(config.out_dir,'testset')
+    if not os.path.isdir(copy_to):
+        os.mkdir(copy_to)
+    if config.gen_label:
+        label = open(os.path.join(config.out_dir,'testset','label.txt'),'w')
+    for img in ts_imgs:
+        img_path = change_root(img.getPath(),config.cp_orig)
+        img_name = os.path.basename(img_path)
+        shutil.copy(img_path,os.path.join(copy_to,img_name))
+        if config.gen_label:
+            im_lb = img_name.split('.')[0].split('_')[1]
+            x,y = img.getCoord()
+            label.write("{} {} {} {} {}\n".format(img_name,im_lb,img.getOrigin(),x,y))
+    
+    
 if __name__ == "__main__":
 
 
     #Parse input parameters
     arg_groups = []
     parser = argparse.ArgumentParser(description='Convolunional Neural \
-        Network for Image Segmentation.')
+        Network for Image Segmentation. Manipulate AL metadata and selected patches.')
 
     parser.add_argument('--meta', dest='meta', action='store_true', 
         help='Acquire images from ALTrainer metadata.', default=False)
@@ -822,6 +842,8 @@ if __name__ == "__main__":
         help='Identify the patches of each WSI in the acquisitions.', default=False)
     parser.add_argument('--train_set', dest='trainset', type=str, nargs=2,
         help='Check if the training sets of two experiments are the same.', default=None)
+    parser.add_argument('--test', dest='test', action='store_true', 
+        help='Extract and save patches used for testing in an experiment.', default=False)
         
     parser.add_argument('-ac', dest='ac_n', nargs='+', type=int,
         help='Acquisitions to obtain images.', default=None, required=False)
@@ -882,5 +904,7 @@ if __name__ == "__main__":
             process_wsi_plot(config,acqs)
     elif not config.trainset is None:
         process_train_set(config)
+    elif config.test:
+        process_test_metadata(config)
     else:
         print("You should choose between ALTrainer metadata (--meta), KM metadat (--cluster) or WSI metadata (--wsi)")
