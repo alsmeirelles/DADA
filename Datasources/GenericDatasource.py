@@ -139,10 +139,9 @@ class GenericDS(ABC):
         self.multi_dir = True if len(dirs) > 0 else False
 
         if self.multi_dir:
-            for f in files:
+            for f in dirs:
                 item = os.path.join(path,f)
-                if os.path.isdir(item):
-                    dlist.append(item)
+                dlist.append(item)
 
             mdata = multiprocess_run(self._run_multiprocess,tuple(),dlist,
                                         self._cpu_count,self._pbar,
