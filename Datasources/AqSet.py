@@ -20,7 +20,7 @@ class AqSet(gd.GenericDS):
 
     A _0.png in the end means nonlymphocite patch, _1.png is a lymphocite patch
     """
-    _rex = r'(?P<un>UN-[\d]+)?-(?P<tcga>TCGA)-(?P<tss>[\w]{2})-(?P<part>[\w]{4})-(?P<sample>[\d]{2}[A-Z]{0,1})-(?P<ddigit>[\w]{2})-(?P<plate>[\w]{2}[0-9]{0,1})-(?P<xcoord>[\d]+)-(?P<ycoord>[\d]+)-(?P<ps1>[\d]+)-(?P<ps2>[\d]+)(?P<version>-v[\d]+)?_(?P<label>[\d]{1}).png'
+    _rex = r'(?P<un>UN-[\\d]+-)?(?P<tcga>TCGA)-(?P<tss>[\\w]{2})-(?P<part>[\\w]{4})-(?P<sample>[\\d]{2}[A-Z]{0,1})-(?P<ddigit>[\\w]{2})-(?P<plate>[\\w]{2}[0-9]{0,1})-(?P<xcoord>[\\d]+)-(?P<ycoord>[\\d]+)-(?P<ps1>[\\d]+)-(?P<ps2>[\\d]+)(?P<version>-v[\\d]+)?_(?P<label>[\\d]{1}).png'
     
     def __init__(self,data_path,keepImg=False,config=None):
         """
