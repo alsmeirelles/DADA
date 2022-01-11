@@ -109,7 +109,6 @@ def _process_test_images(config):
             X,Y,_ = pickle.load(fd)
             fX = np.asarray(X)
             del(X)
-
         if config.test > 0:
             tx = fX[tset[:config.test]]
         else:
@@ -451,7 +450,17 @@ def _wsi_check_test(wsis,testf,dsf,question):
 
     print("\n\nTest set is composed of slides:\n - {}".format(", ".join([k for k in ts_wsis])))
     print("\n\nSampled from test set is composed of slides:\n - {}".format(", ".join([k for k in st_wsis])))
-    
+
+def _change_root(s,d):
+        """
+        s -> original path
+        d -> change location to d
+        """
+        components = tuple(s.split(os.path.sep)[-2:])
+        relative_path = os.path.join(*components)
+
+        return os.path.join(d,relative_path)
+
 def process_wsi_metadata(config):
     """
     Metadata should contain information about the WSI that originated the patch
@@ -594,15 +603,6 @@ def print_wsi_metadata(wsis,config,total_patches,total_pos):
             _wsi_check_test(sds,tst_file,config.cache_file,"POOL")
     
 def process_al_metadata(config):
-    def change_root(s,d):
-        """
-        s -> original path
-        d -> change location to d
-        """
-        components = tuple(s.split(os.path.sep)[-2:])
-        relative_path = os.path.join(*components)
-
-        return os.path.join(d,relative_path)
     
     if not os.path.isdir(config.out_dir):
         os.makedirs(config.out_dir)
@@ -633,7 +633,7 @@ def process_al_metadata(config):
             
         for k in range(len(acquisitions[a])):
             img = acquisitions[a][k]
-            img.setPath(change_root(img.getPath(),config.cp_orig))
+            img.setPath(_change_root(img.getPath(),config.cp_orig))
             img_name = os.path.basename(img.getPath())
             if not config.keep:
                 if img_name in same_name:
@@ -657,7 +657,7 @@ def process_al_metadata(config):
         if config.gen_label:
             label = open(os.path.join(config.out_dir,'testset','label.txt'),'w')
         for img in ts_imgs:
-            img_path = change_root(img.getPath(),config.cp_orig)
+            img_path = _change_root(img.getPath(),config.cp_orig)
             img_name = os.path.basename(img_path)
             shutil.copy(img_path,os.path.join(copy_to,img_name))
             if config.gen_label:
@@ -811,15 +811,17 @@ def process_test_metadata(config):
     """Saves test patches used in an experiment in out_dir"""
         
     ts_imgs = _process_test_images(config)
-    copy_to = os.path.join(config.out_dir,'testset')
-    if not os.path.isdir(copy_to):
-        os.mkdir(copy_to)
+    if not os.path.isdir(config.out_dir):
+        os.mkdir(config.out_dir)
     if config.gen_label:
-        label = open(os.path.join(config.out_dir,'testset','label.txt'),'w')
+        label = open(os.path.join(config.out_dir,'label.txt'),'w')
     for img in ts_imgs:
-        img_path = change_root(img.getPath(),config.cp_orig)
+        if not config.cp_orig is None:
+            img_path = _change_root(img.getPath(),config.cp_orig)
+        else:
+            img_path = img.getPath()
         img_name = os.path.basename(img_path)
-        shutil.copy(img_path,os.path.join(copy_to,img_name))
+        shutil.copy(img_path,os.path.join(config.out_dir,img_name))
         if config.gen_label:
             im_lb = img_name.split('.')[0].split('_')[1]
             x,y = img.getCoord()
@@ -842,7 +844,7 @@ if __name__ == "__main__":
         help='Identify the patches of each WSI in the acquisitions.', default=False)
     parser.add_argument('--train_set', dest='trainset', type=str, nargs=2,
         help='Check if the training sets of two experiments are the same.', default=None)
-    parser.add_argument('--test', dest='test', action='store_true', 
+    parser.add_argument('--test', dest='runtest', action='store_true', 
         help='Extract and save patches used for testing in an experiment.', default=False)
         
     parser.add_argument('-ac', dest='ac_n', nargs='+', type=int,
@@ -904,7 +906,7 @@ if __name__ == "__main__":
             process_wsi_plot(config,acqs)
     elif not config.trainset is None:
         process_train_set(config)
-    elif config.test:
+    elif config.runtest:
         process_test_metadata(config)
     else:
         print("You should choose between ALTrainer metadata (--meta), KM metadat (--cluster) or WSI metadata (--wsi)")
