@@ -43,7 +43,7 @@ def load_model_weights(config,genmodel,tmodel,sw_thread=None):
 
     if config.info:
         stime = time.time()
-            
+           
     #Model can be loaded from previous acquisition train or from a fixed final model
     if config.gpu_count > 1:
         if hasattr(genmodel,'get_npmgpu_weights_cache'):
@@ -72,7 +72,7 @@ def load_model_weights(config,genmodel,tmodel,sw_thread=None):
             if config.info and not config.progressbar:
                 print("Model weights loaded from: {0}".format(ppath))
         else:
-            if self._config.info:
+            if config.info:
                 print("No trained model or weights file found")
             pred_model = None
     else:
