@@ -17,6 +17,7 @@ from Datasources.CellRep import CellRep
 from Utils import SaveLRCallback,CalculateF1Score,EnsembleModelCallback
 from Utils import Exitcodes,CacheManager
 from .DataSetup import split_test
+from AL.Common import load_model_weights
 
 #Keras
 from keras import backend as K
@@ -126,7 +127,7 @@ class Trainer(object):
         #After test set is separated, after data sampling is done, now split train and val
         train_data,val_data = self._ds.split_metadata(self._config.split[:2],data=(X,Y))
 
-        sw_thread = self.train_model(net_model,train_data,val_data)
+        _,sw_thread,_ = self.train_model(net_model,train_data,val_data)
         return sw_thread.join()
 
     def _choose_generator(self,train_data,val_data,fix_dim):
@@ -270,11 +271,12 @@ class Trainer(object):
             training_model = single
             
         # try to resume the training - TODO: consider numpy weights file
-        weights = list(filter(lambda f: f.endswith(".h5") and f.startswith(model.name),os.listdir(self._config.weights_path)))
+        weights = list(filter(lambda f: (f.endswith(".h5") or f.endswith(".npy")) and f.startswith(model.name),os.listdir(self._config.weights_path)))
         weights.sort()
         old_e_offset = 0
         if len(weights) > 0 and not self._config.new_net:
-            print("[GenericTrainer] Intermediary weight load disabled, will train from scratch")
+            #print("[GenericTrainer] Intermediary weight load disabled, will train from scratch")
+            training_model = load_model_weights(self._config,model,training_model)
         wf_header = "{0}-t{1}".format(model.name,old_e_offset+1)
 
         ### Define special behaviour CALLBACKS
