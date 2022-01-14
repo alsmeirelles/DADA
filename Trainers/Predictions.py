@@ -163,12 +163,6 @@ class Predictor(object):
         """
 
         cache_m = CacheManager()
-        split = None
-        if os.path.isfile(cache_m.fileLocation('split_ratio.pik')):
-            split = cache_m.load('split_ratio.pik')
-        else:
-            print("[Predictor] A previously trained model and dataset should exist. No previously defined spliting found.")
-            return Exitcodes.RUNTIME_ERROR
 
         if self._config.verbose > 0:
             unique,count = np.unique(y_test,return_counts=True)
@@ -268,7 +262,6 @@ class Predictor(object):
         for k in range(stp):
             example,i = q.get(block=True)
             start_idx = i*bsize
-            #example = test_generator.next()
             with sess.as_default():
                 with sess.graph.as_default():
                     Y_pred[start_idx:start_idx+bsize] = pred_model.predict_on_batch(example[0])

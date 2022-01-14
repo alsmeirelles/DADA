@@ -439,7 +439,7 @@ class Plotter(object):
                     plt.ylabel('Acquisition step time \n(hh:min:sec)')
                 else:
                     plt.ylabel('Tempo de aquisição \n(hh:min:sec)')
-            elif metric == 'traintime':
+            elif metric == 'traintime' or metric == 'taqtime':
                 if lang == 'en':
                     plt.ylabel('Training step time \n(hh:min:sec)')
                 else:

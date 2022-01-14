@@ -99,12 +99,15 @@ def split_test(config,ds):
     else:
         x_test,y_test = ds.run_dir(config.testdir)
         t_idx = min(len(x_test),t_idx)
-        samples = np.random.choice(len(x_test),t_idx,replace=False)
-        test_x = [x_test[s] for s in samples]
-        test_y = [y_test[s] for s in samples]
-        del(x_test)
-        del(y_test)
-        del(samples)
+        if t_idx < len(x_test):
+            samples = np.random.choice(len(x_test),t_idx,replace=False)
+            test_x = [x_test[s] for s in samples]
+            test_y = [y_test[s] for s in samples]
+            del(x_test)
+            del(y_test)
+            del(samples)
+        else:
+            test_x,test_y = x_test,y_test
         X,Y = fX,fY
         
     return test_x,test_y,X,Y
