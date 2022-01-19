@@ -67,3 +67,11 @@ class AqSet(gd.GenericDS):
         relative_path = os.path.join(*components)
 
         return os.path.join(d,relative_path)
+
+    def getNameGroups(self,img_name):
+
+        m = self.rcomp.match(img_name)
+        if m is None:
+            return None
+        else:
+            return m.groupdict()

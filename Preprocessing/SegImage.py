@@ -83,6 +83,9 @@ class SegImage(ABC):
     def getImgName(self):
         return os.path.basename(self._path).split('.')[0]
 
+    def getImgFullName(self):
+        return os.path.basename(self._path)
+
     def getPath(self):
         return self._path
 
