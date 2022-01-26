@@ -14,12 +14,5 @@ Code is compliant with Python3+. Python 2.X is **NOT** supported
 8. Numpy (>= 1.16.3 preferably);
 9. Openslide 1.1.1 (other versions may work);
 
-## Cloning
-This project uses Nested-Unet as a module. In order to clone us, use the `--recurse-submodules` option:
-
-`
-git clone --recurse-submodules
-`
-
 ## Execution
 Soon...
