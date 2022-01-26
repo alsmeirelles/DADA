@@ -7,6 +7,12 @@ from PIL import Image
 import argparse
 import multiprocessing
 
+#Local imports
+from import_module import import_parents
+
+if __name__ == '__main__' and __package__ is None:
+    import_parents(level=1)
+    
 #Local functions
 from Preprocessing import background,white_ratio
 
@@ -108,7 +114,8 @@ def make_tiles(slide_name,output_folder,patch_size_20X,wr,hms,debug=False,hmc=Fa
     a value divisible by 100.
     """
     imid = os.path.basename(slide_name).split('.')[0]
-    hms[imid]['svs'] = os.path.basename(slide_name)
+    if not hms is None:
+        hms[imid]['svs'] = os.path.basename(slide_name)
     base_pw = 100
     amp = int(patch_size_20X/base_pw)
     
