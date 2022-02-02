@@ -23,7 +23,7 @@ class PImage(SegImage):
         if not arr is None and isinstance(arr,np.ndarray):
             super().__init__(path,arr,keepImg,verbose)
         else:
-            super().__init__(path,keepImg,verbose)
+            super().__init__(path,None,keepImg,verbose)
         self._coord = coord
         self._origin = origin
 

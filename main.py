@@ -136,7 +136,7 @@ if __name__ == "__main__":
     #Parse input parameters
     arg_groups = []
     parser = argparse.ArgumentParser(description='Convolunional Neural \
-        Network for Image Segmentation.')
+        Network for Active Learning.')
 
     ##Preprocessing options
     pre_args = parser.add_argument_group('Preprocessing','Includes image format usage, tiling and normalization')
