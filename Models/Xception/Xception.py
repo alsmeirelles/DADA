@@ -51,8 +51,8 @@ class Xception(GenericEnsemble):
             backend that does not support separable convolutions.
     """
 
-    def __init__(self,config,ds,name=None):
-        super().__init__(config,ds,name=name)
+    def __init__(self,config,ds,name=None,nclasses=2):
+        super().__init__(config,ds,name=name,nclasses=nclasses)
         if name is None:
             self.name = "Xception"        
 
@@ -165,7 +165,7 @@ class Xception(GenericEnsemble):
         use_dp = kwargs.get('use_dp',True) #False if self.is_ensemble() else True
         pooling = kwargs.get('pooling','avg')
         include_top = kwargs.get('include_top',True)
-        classes = self._ds.nclasses
+        classes = self.nclasses
         batch_n = True if self._config.gpu_count <= 1 else False
         channel_axis = 1 if backend.image_data_format() == 'channels_first' else -1
         

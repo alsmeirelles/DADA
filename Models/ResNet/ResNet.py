@@ -210,8 +210,8 @@ class ResNet50(GenericEnsemble):
             backend that does not support separable convolutions.
     """
 
-    def __init__(self,config,ds,name=None):
-        super().__init__(config,ds,name=name)
+    def __init__(self,config,ds,name=None,nclasses=2):
+        super().__init__(config,ds,name=name,nclasses=nclasses)
         if name is None:
             self.name = "ResNet50"        
 
@@ -340,7 +340,7 @@ class ResNet50(GenericEnsemble):
         include_top = kwargs.get('include_top',True)
         preact = kwargs.get('preact',False)
         use_bias = kwargs.get('use_bias',True)
-        classes = self._ds.nclasses
+        classes = self.nclasses
         batch_n = True if self._config.gpu_count <= 1 else False
         bn_axis = 3 if backend.image_data_format() == 'channels_last' else 1
         
@@ -437,10 +437,10 @@ class ResNet101(ResNet50):
     Reference: Deep residual learning for image recognition (CVPR - 2016)
     """
     
-    def __init__(self,config,ds,name=None):
-        super().__init__(config,ds,name=name)
+    def __init__(self,config,ds,name=None,nclasses=2):
+        super().__init__(config,ds,name=name,nclasses=nclasses)
         if name is None:
-            self.name = "ResNet50"        
+            self.name = "ResNet101"        
 
         self._modelCache = "{0}-model.h5".format(self.name)
         self._weightsCache = "{0}-weights.h5".format(self.name)
@@ -461,13 +461,13 @@ class ResNet101(ResNet50):
 
 class ResNet50V2(ResNet50):
     """
-    Instantiates a ResNet 101 model
+    Instantiates a ResNet 50 V2 model
 
     Reference: Deep residual learning for image recognition (CVPR - 2016)
     """
     
-    def __init__(self,config,ds,name=None):
-        super().__init__(config,ds,name=name)
+    def __init__(self,config,ds,name=None,nclasses=2):
+        super().__init__(config,ds,name=name,nclasses=nclasses)
         if name is None:
             self.name = "ResNet50V2"        
 

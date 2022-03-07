@@ -36,8 +36,8 @@ class Inception(GenericEnsemble):
     Model is the same as in: https://github.com/keras-team/keras-applications/blob/master/keras_applications/inception_resnet_v2.py
     Addapted to provide a Bayesian model
     """
-    def __init__(self,config,ds,name=None):
-        super().__init__(config,ds,name=name)
+    def __init__(self,config,ds,name=None,nclasses=2):
+        super().__init__(config,ds,name=name,nclasses=nclasses)
         if name is None:
             self.name = "Inception"        
 
@@ -162,7 +162,7 @@ class Inception(GenericEnsemble):
                                                                 input_tensor=inp,
                                                                 input_shape=input_shape,
                                                                 pooling='avg',
-                                                                classes=self._ds.nclasses,
+                                                                classes=self.nclasses,
                                                                 **kwargs)
         
 
@@ -178,8 +178,8 @@ class EFInception(Inception):
     Runs efficient rescaled Inception
     """
 
-    def __init__(self,config,ds,name=None):
-        super().__init__(config,ds,name=name)
+    def __init__(self,config,ds,name=None,nclasses=2):
+        super().__init__(config,ds,name=name,nclasses=nclasses)
         if name is None:
             self.name = "EFInception"
         self._modelCache = "{0}-model.h5".format(self.name)
@@ -218,7 +218,7 @@ class EFInception(Inception):
                                                                 input_tensor=inp,
                                                                 input_shape=input_shape,
                                                                 pooling='avg',
-                                                                classes=self._ds.nclasses,
+                                                                classes=self.nclasses,
                                                                 **kwargs)
         
 

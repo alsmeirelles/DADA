@@ -41,6 +41,9 @@ class _CacheManager(object):
             else:
                 self._verbose = 0
 
+        if not hasattr(self,'__locations'):
+            self.__locations = {}
+
         self._multi_load_fd = None
 
     def __str__(self):

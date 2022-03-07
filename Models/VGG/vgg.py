@@ -150,9 +150,9 @@ class VGG16(GenericEnsemble):
         model.add(Convolution2D(4096, (1, 1),strides=1,padding='valid',kernel_initializer='he_normal'))
         model.add(Activation('relu'))
         model.add(Dropout(0.75))
-        model.add(Convolution2D(self._ds.nclasses, (1, 1),strides=1,padding='valid',kernel_initializer='he_normal'))
+        model.add(Convolution2D(self.nclasses, (1, 1),strides=1,padding='valid',kernel_initializer='he_normal'))
         model.add(Flatten())
-        model.add(Dense(self._ds.nclasses))
+        model.add(Dense(self.nclasses))
         model.add(Activation('softmax'))
 
         return model
@@ -390,7 +390,7 @@ class EFVGG16(VGG16):
         x = Dropout(0.5)(x,training=training)
         
         #x = Convolution2D(self._ds.nclasses, (1, 1),strides=1,padding='valid',kernel_initializer='he_normal')(x)
-        x = Dense(self._ds.nclasses,kernel_initializer='he_normal')(x)
+        x = Dense(self.nclasses,kernel_initializer='he_normal')(x)
         output = Activation('softmax')(x)
 
         return Model(inp,output)

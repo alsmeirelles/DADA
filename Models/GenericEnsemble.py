@@ -37,8 +37,8 @@ class GenericEnsemble(GenericModel):
     - build_extractor
     - build_ensemble
     """
-    def __init__(self,config,ds,name=None):
-        super().__init__(config,ds,name=name)
+    def __init__(self,config,ds,name=None,nclasses=2):
+        super().__init__(config,ds,name=name,nclasses=nclasses)
         self.tmodels = None
         self.tmids = None
 

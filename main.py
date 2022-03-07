@@ -60,11 +60,6 @@ def main_exec(config):
             Preprocess.preprocess_data(config,imgt)
         
     if config.train:
-        if not os.path.isdir(config.weights_path):
-            os.mkdir(config.weights_path)
-        if not os.path.isdir(config.model_path):
-            os.mkdir(config.model_path)
-            
         if config.multiprocess:
             ctx = mp.get_context('spawn')
             cache_m = CacheManager()
@@ -78,12 +73,7 @@ def main_exec(config):
         else:
             GenericTrainer.run_training(config,None)
 
-    if config.al:
-        if not os.path.isdir(config.weights_path):
-            os.mkdir(config.weights_path)
-        if not os.path.isdir(config.model_path):
-            os.mkdir(config.model_path)
-            
+    if config.al:            
         if config.multiprocess:
             ctx = mp.get_context('spawn')
             cache_m = CacheManager()
@@ -254,9 +244,9 @@ if __name__ == "__main__":
     al_args.add_argument('-tnpred', dest='tnpred', type=int, 
         help='Train the target network and run prediction on this interval of AL iterations. Default = 0 (do not train/test).',default=0)
     al_args.add_argument('-phi', dest='phi', type=int, 
-        help='Phi defines network architecture reduction. Values bigger than 1 reduce nets by 1/phi. Default = 1 (use original sizes).',default=1)
+        help='Phi defines network architecture reduction. Values bigger than 1 reduce nets by 1/phi. Default = 0 (use original sizes).',default=0)
     al_args.add_argument('-tnphi', dest='tnphi', type=int, 
-        help='Phi defines network architecture reduction. Values bigger than 1 reduce nets by 1/phi. Default = 1 (use original sizes).',default=1)
+        help='Phi defines network architecture reduction. Values bigger than 1 reduce nets by 1/phi. Default = 0 (use original sizes).',default=0)
     al_args.add_argument('-dye', dest='dye', action='store_true', default=False,
         help='Apply dynamic epoch count adjustment.')
     

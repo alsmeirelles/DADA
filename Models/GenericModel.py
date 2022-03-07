@@ -13,14 +13,20 @@ class GenericModel(ABC):
     will be available:
     - build_extractor
     - build_ensemble
+
+    @param config <namespace object>: configuration options
+    @param ds <GenericDatasource subclass>: None is also accepted
+    @param name <string>: model name
+    @param nclasses <int>: optional param. If a Datasource is passed, it will define the number of classification classes.
     """
-    def __init__(self,config,ds,name):
+    def __init__(self,config,ds,name,nclasses=2):
         self._config = config
         self._ds = ds
         self.name = name
         self.single = None
         self.parallel = None
         self._phi = config.phi
+        self.nclasses = nclasses if ds is None else ds.nclasses
 
     def rescaleEnabled(self):
         """
@@ -139,7 +145,7 @@ class GenericModel(ABC):
         gama = 1.15
         phi = self._phi
 
-        if phi <= 1:
+        if phi <= 0:
             return full_size
 
         if not dim in ['depth', 'width', 'resolution','lr']:
