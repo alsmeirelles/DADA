@@ -181,10 +181,10 @@ def stack2(x, filters, blocks, stride1=2, use_dp=True, training=None, name=None)
     # Returns
         Output tensor for the stacked blocks.
     """
-    x = block2(x, filters, conv_shortcut=True, use_dp=use_dp, training=training,name=name + '_block1')
+    x = block2(x, filters, conv_shortcut=True, stride=stride1,use_dp=use_dp, training=training,name=name + '_block1')
     for i in range(2, blocks):
         x = block2(x, filters, use_dp=use_dp, training=training,name=name + '_block' + str(i))
-    x = block2(x, filters, stride=stride1, use_dp=use_dp, training=training, name=name + '_block' + str(blocks))
+    x = block2(x, filters, use_dp=use_dp, training=training, name=name + '_block' + str(blocks))
     return x
 
 class ResNet50(GenericEnsemble):
@@ -481,9 +481,9 @@ class ResNet50V2(ResNet50):
 
     def _stack_fn(self,x,filters,use_dp,training):
         x = stack2(x, filters.get(64,64), self.rescale('depth',3), stride1=1, use_dp=use_dp, training=training, name='conv2')
-        x = stack2(x, filters.get(128,128), self.rescale('depth',4), use_dp=use_dp, training=training, name='conv3')
-        x = stack2(x, filters.get(256,256), self.rescale('depth',6), use_dp=use_dp, training=training, name='conv4')
-        x = stack2(x, filters.get(512,512), self.rescale('depth',3), use_dp=use_dp, training=training, name='conv5')
+        x = stack2(x, filters.get(128,128), self.rescale('depth',4), stride1=2,use_dp=use_dp, training=training, name='conv3')
+        x = stack2(x, filters.get(256,256), self.rescale('depth',6), stride1=2,use_dp=use_dp, training=training, name='conv4')
+        x = stack2(x, filters.get(512,512), self.rescale('depth',3), stride1=2,use_dp=use_dp, training=training, name='conv5')
         return x    
 
     def _build_architecture(self,input_shape,training=None,preload=True,ensemble=False,**kwargs):    
