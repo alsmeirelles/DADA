@@ -556,9 +556,12 @@ def print_wsi_metadata(wsis,config,total_patches,total_pos):
     #This dict will store, for each WSI, [#positive patches acquired, #total of positive patches]
     pos_patches = {}
     wsi_means = []
+    cancer_type = {}
     for s in wsis:
         n_patches = len(wsis[s][0])
         labels = np.asarray(wsis[s][1])
+        cancer_type.setdefault(wsis[s][2],[])
+        cancer_type[wsis[s][2]].append(s)
         
         #Count positive patches:
         unique,count = np.unique(labels,return_counts=True)
@@ -586,6 +589,11 @@ def print_wsi_metadata(wsis,config,total_patches,total_pos):
     print("Total of acquired patches: {}".format(total_patches))
     print("Total of positive patches acquired: {} ({:2.2f}%)".format(total_pos,100*total_pos/total_patches))
     print("WSIs used in acquisitions: {}".format(len(wsis)))
+    print("WSIS by cancer type:\n")
+    for ct in cancer_type:
+        print("{} ({} WSIs):\n{}".format(ct,len(cancer_type[ct]),"\n".join(cancer_type[ct])))
+    print("-----------------------------------------------------")
+    
     if config.nc > 0:
         print("Acquired patches dispersion around cluster means: {:.1f}".format(np.mean(wsi_means)))
 
