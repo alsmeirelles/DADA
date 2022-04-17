@@ -21,9 +21,9 @@ class SegImage(ABC):
 
     def __str__(self):
         """
-        String representation is file name
+        String representation for this file name
         """
-        return os.path.basename(self.path)
+        return os.path.basename(self._path)
 
     def __eq__(self,other):
         if not isinstance(other,SegImage):
