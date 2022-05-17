@@ -64,7 +64,10 @@ class AqSet(gd.GenericDS):
         d -> change location to d
         """
         components = tuple(s.split(os.path.sep)[-2:])
-        relative_path = os.path.join(*components)
+        if os.path.basename(d) == components[0]:
+            relative_path = components[1]
+        else:
+            relative_path = os.path.join(*components)
 
         return os.path.join(d,relative_path)
 
