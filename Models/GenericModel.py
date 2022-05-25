@@ -118,7 +118,7 @@ class GenericModel(ABC):
         return self._config.strategy == 'EnsembleTrainer'
 
     def setPhi(self,phi):
-        assert(int(phi)>0), "Phi should be an integer/digit greater than zero."
+        assert(int(phi)>=0), "Phi should be an integer/digit greater or equal to zero."
         self._phi = phi
 
     def setName(self,name):
