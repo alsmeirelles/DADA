@@ -524,7 +524,7 @@ class ActiveLearningTrainer(Trainer):
 
         return [tm],[st],None
     
-    def test_target(self,predictor,acqn,end_train):
+    def test_target(self,predictor,acqn,end_train,results=False):
 
         #Only run training/testing at every tnpred iterations
         if self._config.tnpred == 0:
@@ -552,10 +552,13 @@ class ActiveLearningTrainer(Trainer):
             st[-1].join()
                     
         #Set load_full to false so dropout is disabled
-        predictor.run(self.test_x,self.test_y,load_full=model.is_ensemble(),net_model=model,target=True)        
+        res = predictor.run(self.test_x,self.test_y,load_full=model.is_ensemble(),net_model=model,target=True)        
 
         if self._config.info:
              print("Target net evaluation took: {}".format(timedelta(seconds=time.time() - intime)))
              print("\n")
 
-        return True
+        if results:
+            return res
+        else:
+            return True

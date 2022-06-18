@@ -77,13 +77,15 @@ def print_prediction(config,target=True):
 
     #ROC AUC
     #Get positive scores (binary only)
+    results = {}
     if nclasses == 2:
         scores = Y_pred.transpose()[1]
         fpr,tpr,thresholds = metrics.roc_curve(expected,scores,pos_label=1)
+        auc = metrics.roc_auc_score(expected,scores)
         if target:
-            print("AUC: {0:f}".format(metrics.roc_auc_score(expected,scores)))
+            print("AUC: {0:f}".format(auc))
         else:
-            print("FN AUC: {0:f}".format(metrics.roc_auc_score(expected,scores)))
+            print("FN AUC: {0:f}".format(auc))
 
     if target:
         print("Accuracy: {0:.3f}".format(m_conf[nclasses+2][nclasses]))
@@ -94,6 +96,13 @@ def print_prediction(config,target=True):
         print("False positive rates: {0}".format(fpr))
         print("True positive rates: {0}".format(tpr))
         print("Thresholds: {0}".format(thresholds))
+
+    results['auc'] = np.around(auc,3)
+    results['fpr'] = np.mean(fpr)
+    results['tpr'] = np.mean(tpr)
+    results['acc'] = m_conf[nclasses+2][nclasses]
+
+    return results
         
 class Predictor(object):
     """
@@ -155,7 +164,7 @@ class Predictor(object):
         if x_test is None or y_test is None:
             x_test,y_test,_,_ = split_test(self._config,self._ds)
 
-        self.run_test(net_model,x_test,y_test,load_full,target)
+        return self.run_test(net_model,x_test,y_test,load_full,target)
         
     def run_test(self,model,x_test,y_test,load_full=True,target=True):
         """
@@ -293,4 +302,4 @@ class Predictor(object):
         cache_m.dump((expected,Y_pred,self._ds.nclasses),'test_pred.pik')
 
         #Output metrics
-        print_prediction(self._config,target)
+        return print_prediction(self._config,target)
