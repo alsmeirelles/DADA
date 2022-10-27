@@ -144,7 +144,7 @@ class Trainer(object):
             samplewise_center=self._config.batch_norm,
             samplewise_std_normalization=self._config.batch_norm)
 
-        if self._config.delay_load or self._config.phi > 1:
+        if self._config.delay_load or self._config.phi > 0:
             from Trainers import ThreadedGenerator
 
             train_generator = ThreadedGenerator(dps=train_data,
