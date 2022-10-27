@@ -22,6 +22,12 @@ import sys
 import argparse
 import scipy.stats
 
+#Local imports
+from import_module import import_parents
+
+if __name__ == '__main__' and __package__ is None:
+    import_parents(level=1)
+
 font = {'family' : 'DejaVu Sans',
         'weight' : 'bold',
         'size'   : 21}
@@ -74,7 +80,7 @@ linestyle = [
 markers = ['*','+','x','^','.','2','v','s','p','D',8,9,10,'4','']
 patterns = ["+", ".", "/" , "\\" , "|" , "-","o"]
 #Labels in portuguese (pt) or english (en)
-lang = 'en'
+lang = 'pt'
 
 class Plotter(object):
 
@@ -253,6 +259,125 @@ class Plotter(object):
         plt.grid(True)
         plt.show()
 
+    def draw_time_auc_stats(self,data,**props):
+        """
+        @param data <list>: a list as returned by calculate_stats
+        """
+        import matplotlib.patches as mpatches
+
+        #Function params
+        xticks=props.get('xticks',200)
+        auc_only=props.get('auc_only',True)
+        metrics=props.get('metrics',None)
+        labels=props.get('labels',None)
+        spread=props.get('spread',1)
+        title=props.get('title','')
+        colors=props.get('colors',None)
+        yscale=props.get('scale',False)
+        maxy=props.get('maxy',0.0)
+        miny=props.get('miny',0.0)
+        merge=props.get('merge',False)
+        lloc=props.get('lloc',0)
+        lsize=props.get('lsize',21)
+        fixx=props.get('fixx',1500)
+        
+        color = 0
+        line = 0
+        marker = 0
+        plots = []
+        lbcount = 0
+        metric_patches = []
+        hatch_color = 'black'
+        
+        plt.subplots_adjust(left=0.1, right=0.92, bottom=0.19, top=0.92)
+        ax = plt.subplot(111)
+
+        print(data)
+
+        plot_data = {}
+        for d in data:
+            for metric in metrics:
+                plot_data.setdefault(metric,[])
+                x_data,tdata,ci,y_label,color = data[d][metric]
+                fx_index = np.where(x_data==fixx)
+                plot_data[metric].append(tdata[fx_index][0])
+
+            if not colors is None and colors[d] >= 0:
+                color = colors[d]
+            elif color < 0:
+                color = 0
+
+            if labels is None:
+                lb = d
+            else:
+                lb = labels[d]
+                lbcount = d
+                
+            line = color%len(linestyle)
+            marker = color%len(markers)
+            color = color % len(palette.colors)
+
+            plot_data.setdefault('colors',[])
+            plot_data.setdefault('line',[])
+            plot_data.setdefault('marker',[])
+            plot_data.setdefault('labels',[])
+
+            plot_data['colors'].append(color)
+            plot_data['line'].append(line)
+            plot_data['marker'].append(marker)
+            plot_data['labels'].append(lb)
+            
+        print(plot_data)
+        
+        if len(metrics) == 2:
+            xmetric = metrics[0]
+            ymetric = metrics[1]
+        else:
+            print("Plot supports only 2 metrics.")
+            sys.exit(-1)
+
+        for bar_id in range(len(plot_data[xmetric])):
+            color = plot_data['colors'][bar_id]
+            lb = plot_data['labels'][bar_id]
+            plt.bar(plot_data[xmetric][bar_id],plot_data[ymetric][bar_id],width=20,color=palette(color),label=lb,edgecolor=hatch_color,hatch=patterns[color%len(patterns)])
+            metric_patches.append(mpatches.Patch(facecolor=palette(color),label=lb,hatch=patterns[color%len(patterns)],edgecolor=hatch_color))
+            
+        formatter = FuncFormatter(self.format_func)
+        ax.xaxis.set_major_formatter(formatter)
+
+        if not metrics is None:
+            plt.legend(handles=metric_patches,loc=lloc,ncol=self._ncols,prop={'weight':'bold','size':lsize})
+        else:
+            plt.legend(loc=lloc,ncol=2,labels=config.labels,prop={'weight':'bold','size':lsize})
+
+        plt.xticks(rotation=30)
+
+        #Defining ticks
+        plt.xticks(plot_data[xmetric])
+
+        #Y limits
+        if yscale or maxy == 0.0:
+            ticks = np.linspace(min(0.6,0.9*min(plot_data[ymetric])), max(plot_data[ymetric])+0.1, 8)
+            np.round(ticks,2,ticks)
+        else:
+            ticks = np.arange(0.65,maxy,0.05)
+            np.round(ticks,2,ticks)
+        plt.yticks(ticks)
+
+        axis_t = [min(plot_data[xmetric])*0.9,max(plot_data[xmetric])*1.05,ticks.min(),ticks.max()]
+        plt.axis(axis_t)
+        plt.title(title, loc='left', fontsize=12, fontweight=0, color='orange')
+        if lang == 'en':
+            plt.xlabel("AL step time \n(hh:min:sec)e")
+        else:
+            plt.xlabel("Tempo da iteração AL\n(hh:min:sec)")
+            
+        plt.grid(True, linestyle='--', which='major',color='grey', alpha=.25,axis='y')
+        plt.ylabel('AUC')
+
+        plt.tight_layout()
+        plt.show()        
+
     def draw_time_stats(self,data,**props):
         """
         @param data <list>: a list as returned by calculate_stats
@@ -290,7 +415,7 @@ class Plotter(object):
         
         plt.subplots_adjust(left=0.1, right=0.92, bottom=0.19, top=0.92)
         ax = plt.subplot(111)
-
+        
         for d in data:
             nmetrics = len(metrics)
             if nmetrics > 1:
@@ -1015,12 +1140,12 @@ class Plotter(object):
         colors=kwargs.get('colors',None)
         maxy=kwargs.get('maxy',0.0)
         miny=kwargs.get('miny',0.0)
-        scale=kwargs.get('scale',True)
+        scale=kwargs.get('scale',False)
         merge=kwargs.get('merge',False)
         lloc=kwargs.get('lloc',0)
 
         color = 0
-        hatch_color = 'white'
+        hatch_color = 'black'
         line = 0
         marker = 0
         plotAUC = False
@@ -1163,7 +1288,7 @@ class Plotter(object):
                     lbcount += 1
 
                 bar_x = tset + (lbcount-(nexp/2))*30
-                print("{}:\n - X:{};\n - Y:{}".format(lb,bar_x,tdata))
+                print("{}:\n - X:{};\n - Y:{}; Mean: {}".format(lb,bar_x,tdata,np.mean(tdata)))
 
                 if not self._yIDX is None:
                     print("Plotting only predefined FN points")
@@ -1254,14 +1379,14 @@ class Plotter(object):
             axis_t.extend([ticks.min(),ticks.max()])
             plt.yticks(ticks)
         else:
-            if scale or (maxy and miny) == 0.0:
+            if scale or (maxy == 0.0 and miny == 0.0):
                 ticks = np.linspace(min(0.6,0.9*min(min_y)), min(max(max_y)+0.1,1.0), 8)
                 np.round(ticks,2,ticks)
             elif not scale and maxy > 0.0:
-                ticks = np.arange(miny,maxy,0.1)
+                ticks = np.arange(miny,maxy,0.05)
                 np.round(ticks,2,ticks)
             else:
-                ticks = np.arange(0.55,maxy,0.05)
+                ticks = np.arange(0.55,1.0,0.05)
                 np.round(ticks,2,ticks)
             axis_t.extend([ticks.min(),ticks.max()])
             plt.yticks(ticks)
@@ -1649,8 +1774,10 @@ class Plotter(object):
         if len(data['traintime']) > len(data['acqtime']):
             data['taqtime'] = data['acqtime'] + data['traintime'][:-1]
             data['acqtime'].append(0.0)
-        else:
+        elif len(data['acqtime']) == len(data['traintime']):
             data['taqtime'] = data['acqtime'] + data['traintime']
+        else:
+            data['taqtime'] = data['time']
         data['acqtime'] = np.asarray(data['acqtime'])
         data['time'] = np.asarray(data['time'])
         data['wsave'] = np.asarray(data['wsave'])
@@ -1670,7 +1797,7 @@ class Plotter(object):
             if maxx > np.max(data['trainset']):
                 print("Slurm file ({}) does not have that many samples ({}). Maximum is {}.".format(slurm_path,maxx,np.max(data['trainset'])))
                 #sys.exit(1)
-            else:
+            elif maxx < np.max(data['trainset']):
                 upl = np.where(data['trainset'] > maxx)[0][0]
                 #upl += 1
         if not minx is None:
@@ -1930,7 +2057,7 @@ class Plotter(object):
                     continue
 
                 if metric.endswith('time') and 'tnidx' in data[k]:
-                    #In time metrics, we use TN points
+                    #In time metrics, we use TN points                        
                     max_samples = min(max_samples,len(np.where(data[k]['tnidx'])[0]))
                 else:
                     max_samples = min(max_samples,len(data[k][metric]))
@@ -1967,13 +2094,15 @@ class Plotter(object):
                         trainset = data[k]['trainset'][data[k]['tnidx']] if 'tnidx' in data[k] else data[k]['trainset']
                     #Time metrics exist in all iterations, we separate TN and FN metrics here
                     if metric.endswith('time'):
-                        tdata = data[k][metric][data[k]['tnidx']] if 'tnidx' in data[k] else data[k][metric][:max_samples]
+                        dtlen = min(len(data[k][metric]),len(data[k]['tnidx'])) if 'tnidx' in data[k] else max_samples
+                        tdata = data[k][metric][data[k]['tnidx'][:dtlen]] if 'tnidx' in data[k] else data[k][metric][:max_samples] 
                     else:
                         tdata = data[k][metric][:max_samples]
                     if not tdata is None:
-                        dd = mvalues.shape[1] - trainset.shape[0]
+                        exp = min(trainset.shape[0],len(tdata))
+                        dd = mvalues.shape[1] - exp
                         if dd > 0:
-                            print("Wrong dimensions. There are {} points in experiment {} but expected {}".format(mvalues.shape[1],k,trainset.shape[0]))
+                            print("Wrong dimensions. There are {} points in experiment {} but expected {}".format(exp,k,trainset.shape[0]))
                             mvalues = np.delete(mvalues,np.arange(mvalues.shape[1] - dd,mvalues.shape[1]),axis=1)
                             trainset = trainset[:-dd]
                             max_samples -= dd
@@ -1986,8 +2115,8 @@ class Plotter(object):
                     
                 i += 1
 
-            print("Metric: {}".format(metric))
-            print(trainset,mvalues,max_samples)
+            print("* Metric: {}".format(metric))
+            print("TS:{}\nMV:{}\nMeanN:{} - Samples: {}".format(trainset,mvalues,np.mean(mvalues,axis=0),max_samples))
             return (trainset,mvalues,max_samples)
 
         metric = None
@@ -2287,6 +2416,9 @@ if __name__ == "__main__":
                           'maxy':config.maxy,'miny':config.miny,'scale':config.yscale,'merge':config.merge,'lloc':config.lloc,'spread':config.spread}
         if config.auc_only or (config.merge and 'auc' in config.metrics):
             p.draw_stats(data,**kwargs)
+        elif 'auc' in config.metrics and 'taqtime' in config.metrics:
+            kwargs['metrics'] = config.metrics
+            p.draw_time_auc_stats(data,**kwargs)
         else:
             kwargs['metrics'] = config.metrics
             p.draw_time_stats(data,**kwargs)
