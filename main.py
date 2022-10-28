@@ -244,9 +244,9 @@ if __name__ == "__main__":
     al_args.add_argument('-tnpred', dest='tnpred', type=int, 
         help='Train the target network and run prediction on this interval of AL iterations. Default = 0 (do not train/test).',default=0)
     al_args.add_argument('-phi', dest='phi', type=int, 
-        help='Phi defines network architecture reduction. Values bigger than 1 reduce nets by 1/phi. Default = 0 (use original sizes).',default=0)
+        help='Phi defines network architecture reduction. Values bigger than 0 reduce nets by 1/phi. Default = 0 (use original sizes).',default=0)
     al_args.add_argument('-tnphi', dest='tnphi', type=int, 
-        help='Phi defines network architecture reduction. Values bigger than 1 reduce nets by 1/phi. Default = 0 (use original sizes).',default=0)
+        help='Phi defines target network architecture reduction. Values bigger than 0 reduce nets by 1/phi. Default = 0 (use original sizes).',default=0)
     al_args.add_argument('-dye', dest='dye', action='store_true', default=False,
         help='Apply dynamic epoch count adjustment.')
     

@@ -93,8 +93,9 @@ def calc_flops(model,deps=None):
 
     total_flops = 0.0
     conv_count = 0
+    dense_count = 0
     for l in model.layers:
-        if isinstance(l,layers.Conv2D):
+        if issubclass(l.__class__,layers.convolutional._Conv):
             input_shape = l.input_shape[1:]
             output_shape = l.output_shape[1:]
             conv_filter = l.get_weights()[0]
@@ -119,13 +120,14 @@ def calc_flops(model,deps=None):
                                                                              input_shape,
                                                                              output_shape))
             total_flops += 2*input_shape[1]*output_shape[1]
+            dense_count += 1
             
     if total_flops / 1e9 > 1:   # for Giga Flops
         print('Network consumes {:.3f} GFlops'.format(total_flops/ 1e9))
     else:
         print('Network consumes {:.3f} MFlops'.format(total_flops / 1e6))
 
-    print("Total of convolutional layers: {}".format(conv_count))
+    print("Convolutional layers: {}; Dense layers: {}; Total layer count: {}".format(conv_count,dense_count,len(model.layers)))
         
 if __name__ == "__main__":
 
