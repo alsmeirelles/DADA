@@ -280,6 +280,7 @@ class Plotter(object):
         lloc=props.get('lloc',0)
         lsize=props.get('lsize',21)
         fixx=props.get('fixx',1500)
+        bar=props.get('bar',False)
         
         color = 0
         line = 0
@@ -288,19 +289,30 @@ class Plotter(object):
         lbcount = 0
         metric_patches = []
         hatch_color = 'black'
+        up = 0.0
+        low = 1.0
         
         plt.subplots_adjust(left=0.1, right=0.92, bottom=0.19, top=0.92)
         ax = plt.subplot(111)
 
-        print(data)
-
         plot_data = {}
+
+        if len(metrics) == 2:
+            xmetric = metrics[0]
+            ymetric = metrics[1]
+        else:
+            print("Plot supports only 2 metrics.")
+            sys.exit(-1)
+            
         for d in data:
             for metric in metrics:
                 plot_data.setdefault(metric,[])
                 x_data,tdata,ci,y_label,color = data[d][metric]
-                fx_index = np.where(x_data==fixx)
-                plot_data[metric].append(tdata[fx_index][0])
+                if bar:
+                    fx_index = np.where(x_data==fixx)
+                    plot_data[metric].append(tdata[fx_index][0])
+                else:
+                    plot_data[metric]=tdata
 
             if not colors is None and colors[d] >= 0:
                 color = colors[d]
@@ -326,21 +338,19 @@ class Plotter(object):
             plot_data['line'].append(line)
             plot_data['marker'].append(marker)
             plot_data['labels'].append(lb)
-            
-        print(plot_data)
-        
-        if len(metrics) == 2:
-            xmetric = metrics[0]
-            ymetric = metrics[1]
-        else:
-            print("Plot supports only 2 metrics.")
-            sys.exit(-1)
 
-        for bar_id in range(len(plot_data[xmetric])):
-            color = plot_data['colors'][bar_id]
-            lb = plot_data['labels'][bar_id]
-            plt.bar(plot_data[xmetric][bar_id],plot_data[ymetric][bar_id],width=20,color=palette(color),label=lb,edgecolor=hatch_color,hatch=patterns[color%len(patterns)])
-            metric_patches.append(mpatches.Patch(facecolor=palette(color),label=lb,hatch=patterns[color%len(patterns)],edgecolor=hatch_color))
+            if not bar:
+                print(data[d])
+                c = plt.plot(plot_data[xmetric],plot_data[ymetric], lw = 2.0, marker=markers[marker],linestyle=linestyle[line][1],color=palette(color), alpha = 1)
+                up,low = self.shade_interval(plot_data[xmetric],plot_data[ymetric],ci,palette(color),up,low)
+                metric_patches.append(mpatches.Patch(facecolor=palette(color),label=lb,hatch=patterns[color%len(patterns)],edgecolor=hatch_color))                
+
+        if bar:
+            for bar_id in range(len(plot_data[xmetric])):
+                color = plot_data['colors'][bar_id]
+                lb = plot_data['labels'][bar_id]
+                plt.bar(plot_data[xmetric][bar_id],plot_data[ymetric][bar_id],width=(0.02*max(plot_data[xmetric])),color=palette(color),label=lb,edgecolor=hatch_color,hatch=patterns[color%len(patterns)],alpha=0.7)
+                metric_patches.append(mpatches.Patch(facecolor=palette(color),label=lb,hatch=patterns[color%len(patterns)],edgecolor=hatch_color))
             
         formatter = FuncFormatter(self.format_func)
         ax.xaxis.set_major_formatter(formatter)
@@ -353,14 +363,14 @@ class Plotter(object):
         plt.xticks(rotation=30)
 
         #Defining ticks
-        plt.xticks(plot_data[xmetric])
+        plt.xticks(np.linspace(0.95*min(plot_data[xmetric]),1.05*max(plot_data[xmetric]),10))
 
         #Y limits
         if yscale or maxy == 0.0:
             ticks = np.linspace(min(0.6,0.9*min(plot_data[ymetric])), max(plot_data[ymetric])+0.1, 8)
             np.round(ticks,2,ticks)
         else:
-            ticks = np.arange(0.65,maxy,0.05)
+            ticks = np.arange(0.55,maxy,0.05)
             np.round(ticks,2,ticks)
         plt.yticks(ticks)
 
@@ -579,21 +589,6 @@ class Plotter(object):
         """
         @param data <list>: a list as returned by calculate_stats
         """
-        def shade_interval(x_data,y_data,ci,color,up,low):
-            if not np.isnan(ci).any():
-                low_ci = np.clip(y_data - ci,0.0,1.0)
-                upper_ci = np.clip(y_data + ci,0.0,1.0)
-                ym = np.max(upper_ci)
-                yl = np.min(low_ci)
-            else:
-                yl = np.min(y_data)
-                ym = np.max(y_data)
-            local_up = ym if ym > up else up
-            local_low = yl if yl < low else low
-            if not np.isnan(ci).any():
-                plt.fill_between(x_data, low_ci, upper_ci, color = color, alpha = 0.4)
-
-            return local_up,local_low
 
         xticks=props.get('xticks',200)
         auc_only=props.get('auc_only',True)
@@ -671,9 +666,9 @@ class Plotter(object):
                 xmin = local_min if local_min < xmin else xmin
                 
             # Shade the confidence interval
-            up,low = shade_interval(x_data,y_data,ci,palette(color),up,low)
+            up,low = self.shade_interval(x_data,y_data,ci,palette(color),up,low)
             if merge:
-                up,low = shade_interval(x_data_fn,y_data_fn,ci_fn,mcolor,up,low)
+                up,low = self.shade_interval(x_data_fn,y_data_fn,ci_fn,mcolor,up,low)
             
             color += 1
             line = (line+1)%len(linestyle)
@@ -1574,7 +1569,24 @@ class Plotter(object):
                 return ((data['trainset'],data[key][data['tnidx'][:m]]),(data['fntrainset'],data[key][data['fnidx'][:m]]))
             else:
                 return ((data['trainset'],data[key]),(data['fntrainset'],data[fnkey]))
-        
+
+
+    def shade_interval(self,x_data,y_data,ci,color,up,low):
+        if not np.isnan(ci).any():
+            low_ci = np.clip(y_data - ci,0.0,1.0)
+            upper_ci = np.clip(y_data + ci,0.0,1.0)
+            ym = np.max(upper_ci)
+            yl = np.min(low_ci)
+        else:
+            yl = np.min(y_data)
+            ym = np.max(y_data)
+        local_up = ym if ym > up else up
+        local_low = yl if yl < low else low
+        if not np.isnan(ci).any():
+            plt.fill_between(x_data, low_ci, upper_ci, color = color, alpha = 0.4)
+
+        return local_up,local_low
+    
     def format_func(self,x, pos):
         hours = int(x//3600)
         minutes = int((x%3600)//60)
@@ -2174,6 +2186,8 @@ if __name__ == "__main__":
         help='Figure title.')
     parser.add_argument('-lsize', dest='lsize', type=int, 
         help='Legend font size.', default=21,required=False)
+    parser.add_argument('-bar', action='store_true', dest='bar', default=False, 
+        help='Plot bar version (available in some cases).')    
     
     ##Multiline SLURM parse
     parser.add_argument('--multi', action='store_true', dest='multi', default=False, 
@@ -2413,12 +2427,12 @@ if __name__ == "__main__":
             print("\n".join(["{}: {}".format(k,data[k]) for k in data]))
 
         kwargs = {'labels':config.labels,'xticks':config.xtick,'auc':config.auc_only,'colors':config.colors,'title':config.title,'lsize':config.lsize,
-                          'maxy':config.maxy,'miny':config.miny,'scale':config.yscale,'merge':config.merge,'lloc':config.lloc,'spread':config.spread}
+                          'maxy':config.maxy,'miny':config.miny,'scale':config.yscale,'merge':config.merge,'lloc':config.lloc,'spread':config.spread,'bar':config.bar}
         if config.auc_only or (config.merge and 'auc' in config.metrics):
             p.draw_stats(data,**kwargs)
         elif 'auc' in config.metrics and 'taqtime' in config.metrics:
             kwargs['metrics'] = config.metrics
-            p.draw_time_auc_stats(data,**kwargs)
+            p.draw_time_auc_stats(data,**kwargs)                
         else:
             kwargs['metrics'] = config.metrics
             p.draw_time_stats(data,**kwargs)

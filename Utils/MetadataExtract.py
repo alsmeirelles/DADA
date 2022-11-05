@@ -12,6 +12,12 @@ import pickle
 import importlib
 import re
 from sklearn.cluster import KMeans
+
+#Local imports
+from import_module import import_parents
+
+if __name__ == '__main__' and __package__ is None:
+    import_parents(level=1)
     
 def _process_al_metadata(config):
     """
@@ -686,6 +692,9 @@ def process_al_metadata(config):
     print("Acquired images copied to output dir.")
 
 def process_cluster_metadata(config):
+    from scipy.spatial import ConvexHull
+    from scipy.spatial.distance import cdist
+    
     def _copy_img(dst_dir,acq,cln,img,img_in,orig=None):
         ac_path = os.path.join(dst_dir,str(acq),str(cln))
         if not os.path.isdir(ac_path):
@@ -703,7 +712,7 @@ def process_cluster_metadata(config):
             orig_img = os.path.join(orig,subdir,os.path.basename(img.getPath()))
             shutil.copy(orig_img,os.path.join(ac_path,'{}_{}.{}'.format(img_in,img_class,img_name.split('.')[1])))
             
-    if not os.path.isdir(config.out_dir):
+    if not (config.po or os.path.isdir(config.out_dir)):
         os.mkdir(config.out_dir)
 
     if config.sdir is None or not os.path.isdir(config.sdir):
@@ -718,6 +727,11 @@ def process_cluster_metadata(config):
             ac_id = int(f.split('.')[0].split('-')[3][1:])
             acfiles[ac_id] = os.path.join(config.sdir,f)
 
+    if config.ac_n is None:
+        #Use all data if specific acquisitions were not defined
+        config.ac_n = list(acfiles.keys())
+        config.ac_n.sort()
+        
     ac_imgs = {}
     for k in config.ac_n:
         if not k in acfiles:
@@ -726,8 +740,14 @@ def process_cluster_metadata(config):
 
         with open(acfiles[k],'rb') as fd:
             pool,un_clusters,un_indexes = pickle.load(fd)
-    
+
+        ac_imgs.setdefault(k,{})
+        if config.po:
+            print("*** ACQUISITION {}".format(k))
+
+        wsi_count = 0
         for cln in range(len(un_clusters)):
+            ac_imgs[k].setdefault(cln,{})
             ind = np.asarray(un_clusters[cln])
             print("Cluster {}, # of items: {}".format(cln,ind.shape[0]))
             posa = np.ndarray(shape=(1,),dtype=np.int32)
@@ -737,9 +757,42 @@ def process_cluster_metadata(config):
                 else:
                     posa = np.hstack((posa,np.where(un_indexes == ind[ii])[0]))
                 #Copy image
-                _copy_img(config.out_dir,k,cln,pool[0][ind[ii]],posa[ii],config.cp_orig)
+                if not config.po:
+                    _copy_img(config.out_dir,k,cln,pool[0][ind[ii]],posa[ii],config.cp_orig)
+                else:
+                    img = pool[0][ind[ii]]
+                    if hasattr(img,'getOrigin'):
+                        origin = img.getOrigin()
+                    elif hasattr(img,'_origin'):
+                        origin = img._origin
+                    else:
+                        print("Image has no origin information: {}".format(img.getPath()))
+                        continue
+                    ac_imgs[k][cln].setdefault(origin,[])
+                    ac_imgs[k][cln][origin].append(img)
+            
             print("Cluster {} first items positions in index array (at most {}): {}".format(cln,config.n,posa))
-    
+            wsi_count += len(ac_imgs[k][cln])
+            if config.po:
+                print("Cluster {} has patches in the following WSIs: ".format(cln))
+                for w in ac_imgs[k][cln]:
+                    patches = len(ac_imgs[k][cln][w])
+                    coords = np.array([p.getCoord() for p in ac_imgs[k][cln][w]])
+                    mdist = 0
+                    if patches == 2:
+                      mdist = cdist(coords,coords,'euclidean')[0][1]
+                      mean = mdist
+                    elif patches >= 2:
+                        hull = ConvexHull(coords)
+                        hullpoints = coords[hull.vertices,:]
+                        hdist = cdist(hullpoints, hullpoints, metric='euclidean')
+                        bestpair = np.unravel_index(hdist.argmax(), hdist.shape)
+                        mdist = hdist[bestpair]
+                        mean = np.mean(hdist)
+                    else:
+                        mean = mdist
+                    print("{} ({} patches) Max distance: {:.2f}; Mean distance: {:.2f}".format(w,patches,mdist,mean))
+        print("Mean WSI count in acquisition {}: {}".format(k,(wsi_count/len(un_clusters))))
 
 def process_train_set(config):
 
@@ -847,7 +900,7 @@ if __name__ == "__main__":
     parser.add_argument('--meta', dest='meta', action='store_true', 
         help='Acquire images from ALTrainer metadata.', default=False)
     parser.add_argument('--cluster', dest='cluster', action='store_true', 
-        help='Acquire from KM clustering metadata.', default=False)
+        help='Acquire images from KM clustering metadata.', default=False)
     parser.add_argument('--wsi', dest='wsi', action='store_true', 
         help='Identify the patches of each WSI in the acquisitions.', default=False)
     parser.add_argument('--train_set', dest='trainset', type=str, nargs=2,
@@ -878,7 +931,9 @@ if __name__ == "__main__":
     parser.add_argument('-cache_file', dest='cache_file', type=str,default=None, 
         help='Dataset metadata for WSI statistics.')
     parser.add_argument('-save', action='store_true', dest='save',
-        help='Saves generated statistics to file.',default=False)    
+        help='Saves generated statistics to file.',default=False)
+    parser.add_argument('-po', action='store_true', dest='po',
+        help='Only print data, do not copy images.',default=False)    
     parser.add_argument('-ac_save', dest='ac_save', nargs='+', type=int,
         help='Save image statistics from this acquisitions.', default=None, required=False)
     parser.add_argument('-keep', action='store_true', dest='keep',
