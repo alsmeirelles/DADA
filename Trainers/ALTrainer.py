@@ -130,7 +130,7 @@ class ActiveLearningTrainer(Trainer):
         
     def _restore_pools(self,sp):
         """
-        Remove all past acquisitions from superpool. It's considerd that past acquisitions are aleready loaded
+        Remove all past acquisitions from superpool. It's considerd that past acquisitions are already loaded
         into self.train_x
 
         @param sp <boolean>: use superpool as the reference or current pool ()
