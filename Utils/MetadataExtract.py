@@ -783,7 +783,7 @@ def process_cluster_metadata(config):
                       mdist = cdist(coords,coords,'euclidean')[0][1]
                       mean = mdist
                     elif patches >= 2:
-                        hull = ConvexHull(coords)
+                        hull = ConvexHull(coords,qhull_options="QJ")
                         hullpoints = coords[hull.vertices,:]
                         hdist = cdist(hullpoints, hullpoints, metric='euclidean')
                         bestpair = np.unravel_index(hdist.argmax(), hdist.shape)
