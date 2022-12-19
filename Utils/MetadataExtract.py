@@ -364,14 +364,14 @@ def _dataset_wsi_metadata(cache_file,wsis,pos_patches,title="DATASET"):
                 print("Positive patches acquired from this WSI: {} ({:2.2f}%)".format(pos_patches[s][0],100*pos_patches[s][0]/pos_patches[s][1]))
             else:
                 print("Positive patches acquired from this WSI: {} (0.0%)".format(pos_patches[s][0]))
-            if config.nc > 0:
+            if config.nc > 0 and n_patches >= config.nc:
                 features = []
                 for p in range(n_patches):
                     if not ds_wsis[s][0][p].getCoord() is None:
                         features.append(ds_wsis[s][0][p].getCoord())
                 features = np.asarray(features)
                 if features.shape[0] > config.minp:
-                    km = KMeans(n_clusters = config.nc, init='k-means++',n_jobs=2).fit(features)
+                    km = KMeans(n_clusters = config.nc, init='k-means++').fit(features)
                     _process_wsi_cluster(km,s,ds_wsis[s][0],config)
         print("-----------------------------------------------------")
         print("Total patches in dataset: {}".format(ac_patches))
@@ -580,14 +580,14 @@ def print_wsi_metadata(wsis,config,total_patches,total_pos):
 
         print("******   {} ({} total patches)  *******".format(s,n_patches))
         print("Positive patches acquired: {} ({:2.2f}%)".format(pos_patches[s][0],100*pos_patches[s][0]/n_patches))
-        if config.nc > 0:
+        if config.nc > 0 and n_patches >= config.nc:
             features = []
             for p in range(n_patches):
                 if not wsis[s][0][p].getCoord() is None:
                     features.append(wsis[s][0][p].getCoord())
             features = np.asarray(features)
             if features.shape[0] > config.minp:
-                km = KMeans(n_clusters = config.nc, init='k-means++',n_jobs=2).fit(features)
+                km = KMeans(n_clusters = config.nc, init='k-means++').fit(features)
                 wsi_means.append(_process_wsi_cluster(km,s,wsis[s][0],config))
                 
 
@@ -774,7 +774,9 @@ def process_cluster_metadata(config):
             print("Cluster {} first items positions in index array (at most {}): {}".format(cln,config.n,posa))
             wsi_count += len(ac_imgs[k][cln])
             if config.po:
-                print("Cluster {} has patches in the following WSIs: ".format(cln))
+                print("Cluster {} has patches in the following WSIs ({}): ".format(cln,len(ac_imgs[k][cln])))
+                cluster_max,cluster_mean = 0.0,0.0
+                cln_w_count = 0
                 for w in ac_imgs[k][cln]:
                     patches = len(ac_imgs[k][cln][w])
                     coords = np.array([p.getCoord() for p in ac_imgs[k][cln][w]])
@@ -782,6 +784,9 @@ def process_cluster_metadata(config):
                     if patches == 2:
                       mdist = cdist(coords,coords,'euclidean')[0][1]
                       mean = mdist
+                      cluster_max += mdist
+                      cluster_mean += mean
+                      cln_w_count += 1
                     elif patches >= 2:
                         hull = ConvexHull(coords,qhull_options="QJ")
                         hullpoints = coords[hull.vertices,:]
@@ -789,9 +794,13 @@ def process_cluster_metadata(config):
                         bestpair = np.unravel_index(hdist.argmax(), hdist.shape)
                         mdist = hdist[bestpair]
                         mean = np.mean(hdist)
+                        cluster_max += mdist
+                        cluster_mean += mean
+                        cln_w_count += 1                        
                     else:
                         mean = mdist
                     print("{} ({} patches) Max distance: {:.2f}; Mean distance: {:.2f}".format(w,patches,mdist,mean))
+                print("Cluster Average Maximum: {:.2f}; Cluster Average mean: {:.2f}".format(cluster_max/cln_w_count,cluster_mean/cln_w_count))
         print("Mean WSI count in acquisition {}: {}".format(k,(wsi_count/len(un_clusters))))
 
 def process_train_set(config):
