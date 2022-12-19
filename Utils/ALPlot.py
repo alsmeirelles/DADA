@@ -31,6 +31,7 @@ if __name__ == '__main__' and __package__ is None:
 font = {'family' : 'DejaVu Sans',
         'weight' : 'bold',
         'size'   : 21}
+label_font = 26
 
 mpl.rc('font',**font)
 
@@ -80,7 +81,7 @@ linestyle = [
 markers = ['*','+','x','^','.','2','v','s','p','D',8,9,10,'4','']
 patterns = ["+", ".", "/" , "\\" , "|" , "-","o"]
 #Labels in portuguese (pt) or english (en)
-lang = 'pt'
+lang = 'en'
 
 class Plotter(object):
 
@@ -378,9 +379,9 @@ class Plotter(object):
         plt.axis(axis_t)
         plt.title(title, loc='left', fontsize=12, fontweight=0, color='orange')
         if lang == 'en':
-            plt.xlabel("AL step time \n(hh:min:sec)e")
+            plt.xlabel("AL step time \n(hh:min:sec)e",fontsize=label_font)
         else:
-            plt.xlabel("Tempo da iteração AL\n(hh:min:sec)")
+            plt.xlabel("Tempo da iteração AL\n(hh:min:sec)",fontsize=label_font)
             
         plt.grid(True, linestyle='--', which='major',color='grey', alpha=.25,axis='y')
         plt.ylabel('AUC')
@@ -558,27 +559,27 @@ class Plotter(object):
         plt.axis(axis_t)
         plt.title(title, loc='left', fontsize=12, fontweight=0, color='orange')
         if lang == 'en':
-            plt.xlabel("Training set size")
+            plt.xlabel("Training set size",fontsize=label_font)
         else:
-            plt.xlabel("Conjunto de treinamento")
+            plt.xlabel("Conjunto de treinamento",fontsize=label_font)
 
         if not metrics is None:
             plt.grid(True, linestyle='--', which='major',color='grey', alpha=.25,axis='y')
             if metric == 'time':
                 if lang == 'en':
-                    plt.ylabel('AL step time \n(hh:min:sec)')
+                    plt.ylabel('AL step time \n(hh:min:sec)',fontsize=label_font)
                 else:
-                    plt.ylabel('Tempo da iteração AL\n(hh:min:sec)')
+                    plt.ylabel('Tempo da iteração AL\n(hh:min:sec)',fontsize=label_font)
             elif metric == 'acqtime':
                 if lang == 'en':
-                    plt.ylabel('Acquisition step time \n(hh:min:sec)')
+                    plt.ylabel('Acquisition step time \n(hh:min:sec)',fontsize=label_font)
                 else:
-                    plt.ylabel('Tempo de aquisição \n(hh:min:sec)')
+                    plt.ylabel('Tempo de aquisição \n(hh:min:sec)',fontsize=label_font)
             elif metric == 'traintime' or metric == 'taqtime':
                 if lang == 'en':
-                    plt.ylabel('Training step time \n(hh:min:sec)')
+                    plt.ylabel('Training step time \n(hh:min:sec)',fontsize=label_font)
                 else:
-                    plt.ylabel('Tempo de treinamento \n(hh:min:sec)')
+                    plt.ylabel('Tempo de treinamento \n(hh:min:sec)',fontsize=label_font)
             elif metric == 'auc':
                 plt.ylabel('AUC')
 
@@ -675,10 +676,10 @@ class Plotter(object):
             marker = color%len(markers)
 
             if lang == 'en':
-                plt.xlabel("Training set size")
+                plt.xlabel("Training set size",fontsize=label_font)
             else:
-                plt.xlabel("Conjunto de treinamento")
-            plt.ylabel(y_label)
+                plt.xlabel("Conjunto de treinamento",fontsize=label_font)
+            plt.ylabel(y_label,fontsize=label_font)
                 
         # Label the axes and provide a title
         plt.legend(plots,labels=labels,loc=lloc,ncol=self._ncols,prop={'weight':'bold','size':lsize})
@@ -1140,7 +1141,7 @@ class Plotter(object):
         lloc=kwargs.get('lloc',0)
 
         color = 0
-        hatch_color = 'black'
+        hatch_color = 'white'
         line = 0
         marker = 0
         plotAUC = False
@@ -1711,7 +1712,8 @@ class Plotter(object):
             if trmatch:
                 ssize = int(trmatch.group('set'))
                 if ssize in data['trainset']:
-                    skip_repeat = True
+                    if len(data['trainset']) == len(data['auc']):
+                        skip_repeat = True
                     continue
                 else:
                     data['trainset'].append(ssize)
