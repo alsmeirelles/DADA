@@ -129,7 +129,7 @@ class GenericDS(ABC):
         """
 
         if not os.path.isdir(path):
-            return None
+            return (None,None)
 
         dlist = []
         files = os.listdir(path)
