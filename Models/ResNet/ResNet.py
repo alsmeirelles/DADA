@@ -8,7 +8,7 @@ import numpy as np
 import tensorflow as tf
 
 #Keras stuff
-from keras.utils import multi_gpu_model
+#from keras.utils import multi_gpu_model
 from keras import utils as keras_utils
 from keras_contrib.layers import GroupNormalization
 from keras import backend

@@ -20,7 +20,7 @@ if tf.__version__ >= '1.14.0':
     tf = tf.compat.v1
     from tensorflow.python.util import deprecation
     deprecation._PRINT_DEPRECATION_WARNINGS = False
-    tf.logging.set_verbosity(tf.logging.ERROR)
+    tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
     #tf.disable_v2_behavior()
     
 #Local
@@ -67,12 +67,12 @@ class EnsembleALTrainer(ActiveLearningTrainer):
         
         gpu_options = None
         if gpus > 0:
-            gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=1.0)
+            gpu_options = tf.compat.v1.GPUOptions(per_process_gpu_memory_fraction=1.0)
             gpu_options.allow_growth = True
             gpu_options.Experimental.use_unified_memory = False
             gpu_options.visible_device_list = ",".join([str(g) for g in range(gpus)])
 
-        sess = tf.Session(config=tf.ConfigProto(
+        sess = tf.compat.v1.Session(config=tf.compat.v1.ConfigProto(
             device_count={"CPU":processes,"GPU":gpus},
             intra_op_parallelism_threads=3, 
             inter_op_parallelism_threads=3,

@@ -229,7 +229,7 @@ class Trainer(object):
         # session setup
         if set_session:
             session = K.get_session()
-            ses_config = tf.ConfigProto(
+            ses_config = tf.compat.v1.ConfigProto(
                 device_count={"CPU":self._config.cpu_count,"GPU":self._config.gpu_count},
                 intra_op_parallelism_threads=self._config.cpu_count if self._config.gpu_count == 0 else self._config.gpu_count, 
                 inter_op_parallelism_threads=self._config.cpu_count if self._config.gpu_count == 0 else self._config.gpu_count,

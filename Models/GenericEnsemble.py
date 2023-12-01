@@ -16,7 +16,7 @@ if tf.__version__ >= '1.14.0':
     tf = tf.compat.v1
     from tensorflow.python.util import deprecation
     deprecation._PRINT_DEPRECATION_WARNINGS = False
-    tf.logging.set_verbosity(tf.logging.ERROR)
+    tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
     #tf.disable_v2_behavior()
     
 from keras.layers import Average,Concatenate, Flatten

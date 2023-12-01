@@ -11,7 +11,7 @@ from keras.layers import Conv2DTranspose
 from keras.layers import Activation, LeakyReLU,BatchNormalization
 from keras.layers import Input,Dot
 from keras import backend, optimizers
-from keras.utils import multi_gpu_model
+#from keras.utils import multi_gpu_model
 from keras import regularizers
 from keras_contrib.layers import GroupNormalization
 import keras

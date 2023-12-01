@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 #-*- coding: utf-8
 
+
+
+
+    #from tensorflow.python.keras.utils.multi_gpu_utils import multi_gpu_model
+
+#att
 import importlib
 import os
 
@@ -13,7 +19,7 @@ from keras.layers import Input,Activation
 from keras.layers import Dense, Dropout, Flatten, BatchNormalization
 from keras.layers import ZeroPadding2D,Convolution2D, MaxPooling2D
 from keras import backend, optimizers
-from keras.utils import multi_gpu_model
+#from keras.utils import multi_gpu_model
 from keras.applications import vgg16
 from keras import regularizers
 from keras_contrib.layers import GroupNormalization

@@ -13,7 +13,7 @@ from keras.layers import Input,Activation
 from keras.layers import Dense, Dropout, Flatten
 from keras.layers import ZeroPadding2D,Convolution2D, MaxPooling2D
 from keras import backend, optimizers
-from keras.utils import multi_gpu_model
+#from keras.utils import multi_gpu_model
 from keras.applications import vgg16
 from keras import regularizers
 from keras_contrib.layers import GroupNormalization

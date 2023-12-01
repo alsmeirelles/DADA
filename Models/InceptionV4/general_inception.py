@@ -16,14 +16,14 @@ if tf.__version__ >= '1.14.0':
     tf = tf.compat.v1
     from tensorflow.python.util import deprecation
     deprecation._PRINT_DEPRECATION_WARNINGS = False
-    tf.logging.set_verbosity(tf.logging.ERROR)
+    tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
     #tf.disable_v2_behavior()
 
 #Network
 from keras.models import Sequential,Model
 from keras.layers import Input
 from keras import optimizers
-from keras.utils import multi_gpu_model
+#from keras.utils import multi_gpu_model
 from keras import backend as K
 
 #Locals
