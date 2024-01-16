@@ -10,7 +10,7 @@
 #echo commands to stdout
 #set -x
 
-DIRID="DB/DB-50"
+DIRID="DB/DB-82"
 cd /ocean/projects/asc130006p/alsm/active-learning/Segframe
 
 echo '[VIRTUALENV]'
@@ -23,7 +23,7 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/ocean/projects/asc130006p/alsm/venv/lib
 echo '[START] training'
 date +"%D %T"
 
-time python3 main.py -i -v --train --pred -predst /ocean/projects/asc130006p/alsm/active-learning/data/AL-367 -split 0.99 0.01 0.0 -net EFInception -data AqSet -d -k -e 50 -b 96 -tdim 240 240 -f1 10 -out logs/ -cpu 15 -gpu 1 -sv -nsw -wpath results/$DIRID -model_dir results/$DIRID -logdir results/$DIRID -cache results/$DIRID -test_dir /ocean/projects/asc130006p/alsm/active-learning/data/Test-T8 -phi 1 -lr 0.0005 -tn -aug 
+time python3 main.py -i -v --train --pred -predst /ocean/projects/asc130006p/alsm/active-learning/data/AL-367 -split 0.99 0.01 0.0 -net EFInception -data AqSet -d -k -e 50 -b 96 -tdim 240 240 -f1 10 -out logs/ -cpu 15 -gpu 1 -sv -nsw -wpath results/$DIRID -model_dir results/$DIRID -logdir results/$DIRID -cache results/$DIRID -test_dir /ocean/projects/asc130006p/alsm/active-learning/data/Test-T8 -phi 6 -lr 0.0005 -tn -aug 
 
 
 echo '[FINAL] done training'

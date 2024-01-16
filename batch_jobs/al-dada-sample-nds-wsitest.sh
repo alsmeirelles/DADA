@@ -10,7 +10,7 @@
 #echo commands to stdout
 #set -x
 
-DIRID="AL/AL-371"
+DIRID="AL/AL-423"
 cd /ocean/projects/asc130006p/alsm/active-learning/Segframe
 
 echo '[VIRTUALENV]'
@@ -23,9 +23,11 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/ocean/projects/asc130006p/alsm/venv/lib
 echo '[START] training'
 date +"%D %T"
 
-time python3 main.py -i -v --al -predst /ocean/projects/asc130006p/alsm/active-learning/data/nds300 -split 0.9 0.01 0.09 -net ResNet50V2 -data CellRep -init_train 500 -ac_steps 20 -dropout_steps 20 -ac_function dada -un_function bayesian_bald -acquire 200 -d -e 50 -b 64 -tdim 240 240 -out logs/ -cpu 15 -gpu 1 -tn -sv -nsw -wpath results/$DIRID -model_dir results/$DIRID -logdir results/$DIRID -cache results/$DIRID -sample 2000 -spool 2 -load_train -wsi_split 5 -pred_size 15000 -phi 2 -k -lr 0.0005 -pca 50 -f1 30 -aug  
+time python3 main.py -i -v --al -predst /ocean/projects/asc130006p/alsm/active-learning/data/nds300 -split 0.9 0.01 0.09 -net EFInception -data CellRep -init_train 500 -ac_steps 20 -dropout_steps 20 -ac_function dada -un_function bayesian_bald -acquire 200 -d -e 50 -b 96 -tdim 240 240 -out logs/ -cpu 15 -gpu 1 -tn -sv -nsw -wpath results/$DIRID -model_dir results/$DIRID -logdir results/$DIRID -cache results/$DIRID -sample 2000 -load_train -wsi_split 5 -pred_size 15000 -phi 0 -k -lr 0.0001 -pca 50 -f1 30 -spool 2 
 
 #-tnet EFInception -tnpred 2 -tnphi 1
+#-sample 2000 -spool 2
+#-wsilist TCGA-BL-A13J-01Z-00 TCGA-FR-A728-01Z-00 TCGA-EE-A2MH-01Z-00 TCGA-C5-A1MH-01Z-00 TCGA-US-A77G-01Z-00 -wsimax 1.0 1.0 1.0 1.0 0.4
 
 echo '[FINAL] done training'
 
