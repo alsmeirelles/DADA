@@ -8,13 +8,13 @@ import argparse
 import multiprocessing
 
 #Local imports
-from import_module import import_parents
+#from import_module import import_parents
 
-if __name__ == '__main__' and __package__ is None:
-    import_parents(level=1)
+#if __name__ == '__main__' and __package__ is None:
+#    import_parents(level=1)
     
 #Local functions
-from Preprocessing import background,white_ratio
+#from Preprocessing import background,white_ratio
 
 
 def _check_heatmap_size(imid,width,height,hms):
@@ -114,9 +114,9 @@ def make_tiles(slide,output_folder,patch_size,wr,csv_dir,debug=False):
     a value divisible by 100.
     """
     slide_name = os.path.basename(slide)
-    imid = slide_name[:-4]
+    imid = slide_name.split(".")[0]
 
-    csv = os.path.join(csv_dir,".".join([imid,"csv"]))
+    csv = os.path.join(csv_dir,"-".join(["prediction",imid]))
     if not os.path.isfile(csv):
         print("No CSV file for WSI: {}".format(slide_name))
         return 0,0
@@ -142,33 +142,36 @@ def make_tiles(slide,output_folder,patch_size,wr,csv_dir,debug=False):
     print(slide_name, width, height);
         
     for d in csv_data:
-        _,x,y,pw_x,pw_y,p1,p2,p3 = d.split(',')
+        x,y,p1,p2,p3 = d.split(' ')
         x,y = int(x),int(y)
-        pw_x,pw_y = int(pw_x),int(pw_y)
+        x = round(x - patch_size/2)
+        x = x if x >= 0 else 0
+        y = round(y - patch_size/2)
+        y = y if y >= 0 else 0
         p1,p2,p3 = float(p1),float(p2),float(p3)
-        if p1 >= 0.5 or p2 >= 0.5:
-            patch = oslide.read_region((x, y), 0, (pw_x, pw_y));
-            np_patch = np.array(patch)
-            if not background(np_patch) and white_ratio(np_patch) <= wr:
-                if patch_size > 0 and patch_size != pw_x:
-                    patch = patch.resize((patch_size, patch_size), Image.ANTIALIAS);
-                if p2 >= 0.5:
-                    pos_count += 1
-                    label = 1
-                else:
-                    label = 0
-                fname = '{}/{}-{}-{}-{}-{}_{}.png'.format(output_folder, imid, x, y, pw_x, np_patch.shape[0],label);
-                patch.save(fname);
-                pcount += 1
+        if (p1+p2+p3) == 0.0:
+            continue
+        
+        patch = oslide.read_region((x, y), 0, (patch_size, patch_size));
+        np_patch = np.array(patch)
+        #if not background(np_patch) and white_ratio(np_patch) <= wr:
+        if p2 >= 0.5:
+            pos_count += 1
+            label = 1
+        else:
+            label = 0
+        fname = '{}/{}-{}-{}-{}-{}_{}.png'.format(output_folder, imid, x, y, patch_size, np_patch.shape[0],label);
+        patch.save(fname);
+        pcount += 1
 
-            del(np_patch)
+        del(np_patch)
             
     oslide.close()
 
     sys.stdout.flush()
     return pcount,pos_count
 
-def generate_label_files(tdir,hms):
+def generate_label_files(tdir):
     """
     CellRep datasources use label text files to store ground truth for each patch.
     File: label.txt
@@ -210,7 +213,7 @@ if __name__ == "__main__":
     parser.add_argument('-label', action='store_true', dest='label',
         help='Generate labels for the patches from heatmaps.',default=False)
     parser.add_argument('-txt_label', action='store_true', dest='txt_label',
-        help='Generate labels for the patches from heatmaps.',default=False)    
+        help='Generate text file labels for the patches from heatmaps.',default=False)    
     parser.add_argument('-ps', dest='patch_size', type=int, 
         help='Patch size in 20x magnification (Default is 350 px)', default=350,required=False)
     parser.add_argument('-wr', dest='white', type=float, 
@@ -251,4 +254,4 @@ if __name__ == "__main__":
     print("Total of positive patches generated: {} ({:2.2f} %)".format(total_pos,100*total_pos/total_patches))
 
     if config.txt_label:
-        generate_label_files(config.out_dir,hms)
+        generate_label_files(config.out_dirt)
