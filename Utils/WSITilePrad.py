@@ -8,13 +8,13 @@ import argparse
 import multiprocessing
 
 #Local imports
-from import_module import import_parents
+#from import_module import import_parents
 
-if __name__ == '__main__' and __package__ is None:
-    import_parents(level=1)
+#if __name__ == '__main__' and __package__ is None:
+#    import_parents(level=1)
     
 #Local functions
-from Preprocessing import background,white_ratio
+#from Preprocessing import background,white_ratio
 
 
 def _check_heatmap_size(imid,width,height,hms):
@@ -154,15 +154,15 @@ def make_tiles(slide,output_folder,patch_size,wr,csv_dir,debug=False):
         
         patch = oslide.read_region((x, y), 0, (patch_size, patch_size));
         np_patch = np.array(patch)
-        if not background(np_patch) and white_ratio(np_patch) <= wr:
-            if p2 >= 0.5:
-                pos_count += 1
-                label = 1
-            else:
-                label = 0
-            fname = '{}/{}-{}-{}-{}-{}_{}.png'.format(output_folder, imid, x, y, patch_size, np_patch.shape[0],label);
-            patch.save(fname);
-            pcount += 1
+        #if not background(np_patch) and white_ratio(np_patch) <= wr:
+        if p2 >= 0.5:
+            pos_count += 1
+            label = 1
+        else:
+            label = 0
+        fname = '{}/{}-{}-{}-{}-{}_{}.png'.format(output_folder, imid, x, y, patch_size, np_patch.shape[0],label);
+        patch.save(fname);
+        pcount += 1
 
         del(np_patch)
             
@@ -254,4 +254,4 @@ if __name__ == "__main__":
     print("Total of positive patches generated: {} ({:2.2f} %)".format(total_pos,100*total_pos/total_patches))
 
     if config.txt_label:
-        generate_label_files(config.out_dir)
+        generate_label_files(config.out_dirt)
