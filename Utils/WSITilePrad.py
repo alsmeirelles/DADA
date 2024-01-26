@@ -121,6 +121,9 @@ def make_tiles(slide,output_folder,patch_size,wr,csv_dir,debug=False):
         print("No CSV file for WSI: {}".format(slide_name))
         return 0,0
 
+    if debug:
+        print("Starting SLIDE: {}".format(slide_name))
+
     csv_data = None
     with open(csv,'r') as fd:
         csv_data = fd.readlines()
@@ -128,9 +131,10 @@ def make_tiles(slide,output_folder,patch_size,wr,csv_dir,debug=False):
         
     try:
         oslide = openslide.OpenSlide(slide);
-    except:
+    except Exception as e:
         print('{}: exception caught'.format(slide));
-        exit(1);
+        print(e)
+        sys.exit(1);
 
     width = oslide.dimensions[0];
     height = oslide.dimensions[1];
@@ -160,7 +164,11 @@ def make_tiles(slide,output_folder,patch_size,wr,csv_dir,debug=False):
             label = 1
         else:
             label = 0
-        fname = '{}/{}-{}-{}-{}-{}_{}.png'.format(output_folder, imid, x, y, patch_size, np_patch.shape[0],label);
+
+        fname = '{}/{}-{}-{}-{}-{}_{}.png'.format(output_folder, imid, x, y, patch_size, np_patch.shape[0],label)
+        if debug:
+            print("    - {}: prob {}".format(os.path.basename(fname),p2))
+
         patch.save(fname);
         pcount += 1
 
