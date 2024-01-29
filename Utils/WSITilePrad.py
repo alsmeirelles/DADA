@@ -165,7 +165,7 @@ def make_tiles(slide,output_folder,patch_size,wr,csv_dir,debug=False):
         else:
             label = 0
 
-        fname = '{}/{}-{}-{}-{}-{}_{}.png'.format(output_folder, imid, x, y, patch_size, np_patch.shape[0],label)
+        fname = '{}/{}/{}-{}-{}-{}-{}_{}.png'.format(output_folder,imid, imid, x, y, patch_size, np_patch.shape[0],label)
         if debug:
             print("    - {}: prob {}".format(os.path.basename(fname),p2))
 
@@ -175,7 +175,9 @@ def make_tiles(slide,output_folder,patch_size,wr,csv_dir,debug=False):
         del(np_patch)
             
     oslide.close()
-
+    if debug:
+        print("Finished slide {}: {} total positives".format(imid,pos_count))
+        
     sys.stdout.flush()
     return pcount,pos_count
 
