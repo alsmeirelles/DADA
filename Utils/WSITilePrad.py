@@ -124,6 +124,10 @@ def make_tiles(slide,output_folder,patch_size,wr,csv_dir,debug=False):
     if debug:
         print("Starting SLIDE: {}".format(slide_name))
 
+    to_dir = os.path.join(output_folder,imid)
+    if not os.path.isdir(to_dir):
+        os.mkdir(to_dir)        
+
     csv_data = None
     with open(csv,'r') as fd:
         csv_data = fd.readlines()
@@ -166,6 +170,7 @@ def make_tiles(slide,output_folder,patch_size,wr,csv_dir,debug=False):
             label = 0
 
         fname = '{}/{}/{}-{}-{}-{}-{}_{}.png'.format(output_folder,imid, imid, x, y, patch_size, np_patch.shape[0],label)
+            
         if debug:
             print("    - {}: prob {}".format(os.path.basename(fname),p2))
 
