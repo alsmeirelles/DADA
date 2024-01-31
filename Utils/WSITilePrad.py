@@ -269,4 +269,4 @@ if __name__ == "__main__":
     print("Total of positive patches generated: {} ({:2.2f} %)".format(total_pos,100*total_pos/total_patches))
 
     if config.txt_label:
-        generate_label_files(config.out_dirt)
+        generate_label_files(config.out_dir)
