@@ -174,6 +174,9 @@ def make_tiles(slide,output_folder,patch_size,wr,csv_dir,debug=False):
         if debug:
             print("    - {}: prob {}".format(os.path.basename(fname),p2))
 
+        if not patch.info.get('icc_profile') is None:
+            del(patch.info['icc_profile'])
+        
         patch.save(fname);
         pcount += 1
 
