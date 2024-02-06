@@ -12,20 +12,19 @@ from threading import Thread
 from Datasources.CellRep import CellRep
 from .BatchGenerator import ThreadedGenerator
 from .DataSetup import split_test
-from Utils import SaveLRCallback
 from Utils import Exitcodes,CacheManager,PrintConfusionMatrix
 from AL.Common import load_model_weights
+
+#Tensorflow
+import tensorflow as tf
+from tensorflow import keras as keras
 
 #Keras
 from keras import backend as K
 from keras.preprocessing.image import ImageDataGenerator
 # Training callbacks
-from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau
 from keras.utils import to_categorical
 from keras.models import load_model
-
-#Tensorflow
-import tensorflow as tf
 
 #Scikit learn
 from sklearn import metrics
@@ -197,9 +196,6 @@ class Predictor(object):
         if self._config.verbose > 1:
             print("Y original ({1}):\n{0}".format(Y,Y.shape))        
 
-        # session setup
-        sess = K.get_session()
-        
         if self._ensemble:
             #Weights should be loaded during ensemble build
             if hasattr(model,'build_ensemble'):
@@ -271,10 +267,8 @@ class Predictor(object):
         for k in range(stp):
             example,i = q.get(block=True)
             start_idx = i*bsize
-            with sess.as_default():
-                with sess.graph.as_default():
-                    Y_pred[start_idx:start_idx+bsize] = pred_model.predict_on_batch(example[0])
-                    expected[start_idx:start_idx+bsize] = example[1]
+            Y_pred[start_idx:start_idx+bsize] = pred_model.predict_on_batch(example[0])
+            expected[start_idx:start_idx+bsize] = example[1]
             if self._config.progressbar:
                 l.update(1)
             elif self._config.info:

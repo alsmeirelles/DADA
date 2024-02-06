@@ -1,17 +1,12 @@
 #!/usr/bin/env python3
 #-*- coding: utf-8
 
-
-
-
-    #from tensorflow.python.keras.utils.multi_gpu_utils import multi_gpu_model
-
-#att
 import importlib
 import os
 
 import numpy as np
 import tensorflow as tf
+from tensorflow import keras
 
 #Network
 from keras.models import Sequential,Model
@@ -22,7 +17,7 @@ from keras import backend, optimizers
 #from keras.utils import multi_gpu_model
 from keras.applications import vgg16
 from keras import regularizers
-from keras_contrib.layers import GroupNormalization
+from keras.layers import GroupNormalization
 from keras import backend as K
 
 #Locals
@@ -99,37 +94,23 @@ class VGG16(GenericEnsemble):
                 print("Found previous learning rate: {0}".format(l_rate))
 
         l_rate = self.rescale('lr',l_rate)
-        sgd = optimizers.SGD(lr=l_rate, decay=1.5e-4, momentum=0.9, nesterov=True)
+        sgd = optimizers.SGD(learning_rate=l_rate, decay=1.5e-4, momentum=0.9, nesterov=True)
         #adam = optimizers.Adam(lr = l_rate)
         
         #Return parallel model if multiple GPUs are available
         parallel_model = None
         
-        if self._config.gpu_count > 1:
-            with tf.device('/cpu:0'):
-                model.compile(loss='categorical_crossentropy',
+        model.compile(loss='categorical_crossentropy',
                     optimizer=sgd,
-                    metrics=['accuracy'])
-
-            parallel_model = multi_gpu_model(model,gpus=self._config.gpu_count)
-            parallel_model.compile(loss='categorical_crossentropy',
-                                       optimizer=sgd,
-                                       metrics=['accuracy'],
-                                       #options=p_opt, 
-                                       #run_metadata=p_mtd
-                                       )
-        else:
-            model.compile(loss='categorical_crossentropy',
-                optimizer=sgd,
-                metrics=['accuracy'],
-                #options=p_opt, 
-                #run_metadata=p_mtd
-                )
+                    metrics=['accuracy'],
+                    #options=p_opt, 
+                    #run_metadata=p_mtd
+                    )
 
         self.single = model
         self.parallel = parallel_model
 
-        return (model,parallel_model)
+        return (model,model)
 
     def _build_architecture(self,input_shape,training,preload=True,ensemble=False,layer_freeze=0):
         weights = None

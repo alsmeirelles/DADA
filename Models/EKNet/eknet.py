@@ -6,6 +6,7 @@ import os
 
 import numpy as np
 import tensorflow as tf
+from tensorflow import keras
 
 #Network
 from keras.models import Sequential,Model
@@ -16,7 +17,7 @@ from keras import backend, optimizers
 #from keras.utils import multi_gpu_model
 from keras.applications import vgg16
 from keras import regularizers
-from keras_contrib.layers import GroupNormalization
+from keras.layers import GroupNormalization
 from keras import backend as K
 
 #Locals
@@ -116,28 +117,14 @@ class EKNet(GenericModel):
         #Return parallel model if multiple GPUs are available
         parallel_model = None
         
-        if self._config.gpu_count > 1:
-            with tf.device('/cpu:0'):
-                model.compile(loss='categorical_crossentropy',
+        model.compile(loss='categorical_crossentropy',
                     optimizer=opt,
-                    metrics=['accuracy'])
+                    metrics=['accuracy'],
+                    #options=p_opt, 
+                    #run_metadata=p_mtd
+                    )
 
-            parallel_model = multi_gpu_model(model,gpus=self._config.gpu_count)
-            parallel_model.compile(loss='categorical_crossentropy',
-                                       optimizer=opt,
-                                       metrics=['accuracy'],
-                                       #options=p_opt, 
-                                       #run_metadata=p_mtd
-                                       )
-        else:
-            model.compile(loss='categorical_crossentropy',
-                optimizer=opt,
-                metrics=['accuracy'],
-                #options=p_opt, 
-                #run_metadata=p_mtd
-                )
-
-        return (model,parallel_model)
+        return (model,model)
 
     def _build_architecture(self,input_shape,training=None,feature=False):
         original_vgg16 = vgg16.VGG16(weights=self.cache_m.fileLocation('vgg16_weights_notop.h5'),

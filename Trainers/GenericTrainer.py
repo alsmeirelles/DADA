@@ -19,22 +19,21 @@ from Utils import Exitcodes,CacheManager
 from .DataSetup import split_test
 from AL.Common import load_model_weights
 
-#Keras
-from keras import backend as K
-from keras.preprocessing.image import ImageDataGenerator
-# Training callbacks
-from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau,LearningRateScheduler,EarlyStopping
-from keras.utils import to_categorical
-
 #Preparing migration to TF 2.0
 import tensorflow as tf
 if tf.__version__ >= '1.14.0':
-    v1 = tf.compat.v1
     from tensorflow.python.util import deprecation
     deprecation._PRINT_DEPRECATION_WARNINGS = False
-    v1.logging.set_verbosity(v1.logging.ERROR)
-    #v1.enable_eager_execution()
-    #tf.disable_v2_behavior()
+    tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+    from tensorflow import keras as keras
+    
+#Keras
+from tensorflow.keras import backend as K
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+# Training callbacks
+from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau,LearningRateScheduler,EarlyStopping
+from tensorflow.keras.utils import to_categorical
+
 
 def run_training(config,locations=None):
     """
@@ -226,18 +225,6 @@ class Trainer(object):
         else:
             save_numpy = False
             
-        # session setup
-        if set_session:
-            session = K.get_session()
-            ses_config = tf.compat.v1.ConfigProto(
-                device_count={"CPU":self._config.cpu_count,"GPU":self._config.gpu_count},
-                intra_op_parallelism_threads=self._config.cpu_count if self._config.gpu_count == 0 else self._config.gpu_count, 
-                inter_op_parallelism_threads=self._config.cpu_count if self._config.gpu_count == 0 else self._config.gpu_count,
-                log_device_placement=True if self._verbose > 1 else False
-                )
-            session.config = ses_config
-            K.set_session(session)
-            
         if self._verbose > 0 and (stats is None or stats):
             unique,count = np.unique(train_data[1],return_counts=True)
             l_count = dict(zip(unique,count))
@@ -304,8 +291,8 @@ class Trainer(object):
             print("Model parameters: {}".format(single.count_params()))
             print("Model layers: {}".format(len(single.layers)))
 
-        hist = training_model.fit_generator(
-            generator = train_generator,
+        hist = training_model.fit(
+            x = train_generator,
             steps_per_epoch = len(train_generator), #// self._config.batch_size,
             epochs = self._config.epochs,
             validation_data = val_generator,

@@ -12,17 +12,17 @@ from datetime import timedelta
 import warnings
 warnings.filterwarnings('ignore')
     
-from keras.preprocessing.image import ImageDataGenerator
-from keras import backend as K
 #Preparing migration to TF 2.0
 import tensorflow as tf
 if tf.__version__ >= '1.14.0':
-    tf = tf.compat.v1
     from tensorflow.python.util import deprecation
     deprecation._PRINT_DEPRECATION_WARNINGS = False
     tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
-    #tf.disable_v2_behavior()
-    
+    from tensorflow import keras as keras
+
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras import backend as K
+
 #Local
 from .ALTrainer import ActiveLearningTrainer
 from .Predictions import Predictor
@@ -61,26 +61,7 @@ class EnsembleALTrainer(ActiveLearningTrainer):
 
     def _initializer(self,**kwargs):
 
-        #initialize tensorflow session
-        gpus = kwargs.get('gpus',0)
-        processes = kwargs.get('processes',1)
-        
-        gpu_options = None
-        if gpus > 0:
-            gpu_options = tf.compat.v1.GPUOptions(per_process_gpu_memory_fraction=1.0)
-            gpu_options.allow_growth = True
-            gpu_options.Experimental.use_unified_memory = False
-            gpu_options.visible_device_list = ",".join([str(g) for g in range(gpus)])
-
-        sess = tf.compat.v1.Session(config=tf.compat.v1.ConfigProto(
-            device_count={"CPU":processes,"GPU":gpus},
-            intra_op_parallelism_threads=3, 
-            inter_op_parallelism_threads=3,
-            log_device_placement=False,
-            gpu_options=gpu_options
-            ))
-        #sess.config = config
-        K.set_session(sess)
+        print("[EnsembleTrainer] Done initializing GPUs:\n - available devices: {}".format(tf.config.list_physical_devices('GPU')))
 
     def _print_stats(self,train_data,val_data):
         unique,count = np.unique(train_data[1],return_counts=True)
@@ -208,7 +189,7 @@ class EnsembleALTrainer(ActiveLearningTrainer):
                     
             tm,st,epad = self.train_model(model,(self.train_x,self.train_y),(self.val_x,self.val_y),
                                          set_session=False,stats=False,summary=False,
-                                         clear_sess=False,save_numpy=True)
+                                         clear_sess=False,save_numpy=False)
             t_models[m] = tm
             sw_thread.append(st)
             cpad.append(epad)

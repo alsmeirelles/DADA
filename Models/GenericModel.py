@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 #-*- coding: utf-8
 
+import tensorflow as tf
+
 from abc import ABC,abstractmethod
 import math
 import numpy as np
@@ -75,6 +77,8 @@ class GenericModel(ABC):
         """
         Child classes should implement: _build method
 
+        Deprecation: parallel_model should be removed in future updates
+
         Optional params:
         @param data_size <int>: size of the training dataset
         @param training <boolean>: set layer behavior to training mode (aplicable to dropout/BatchNormalization)
@@ -102,13 +106,14 @@ class GenericModel(ABC):
             kwargs['allocated_gpus'] = self._config.gpu_count
 
         if new or (self.single is None and self.parallel is None):
-            model,parallel_model = self._build(width,height,channels,**kwargs)
+            with tf.distribute.MirroredStrategy().scope():
+                model,parallel_model = self._build(width,height,channels,**kwargs)
             if keep_model:
                 self.single = model
                 self.parallel = parallel_model
         else:
             model,parallel_model = self.single,self.parallel
-            
+
         return (model,parallel_model)
 
     def get_ds(self):
