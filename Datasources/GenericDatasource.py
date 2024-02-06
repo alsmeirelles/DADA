@@ -394,13 +394,17 @@ class GenericDS(ABC):
                 unique,count = np.unique(np_y,return_counts=True)
                 l_count = dict(zip(unique,count))
                 pcount = min(int(pos_rt*k),l_count[1])
-                pos_samples = np.random.choice(np.where(np_y == 1)[0],pcount,replace=False)
-                neg_samples = np.random.choice(np.where(np_y != 1)[0],k-pcount,replace=False)
+                try:
+                    pos_samples = np.random.choice(np.where(np_y == 1)[0],pcount,replace=False)
+                    neg_samples = np.random.choice(np.where(np_y != 1)[0],k-pcount,replace=False)
+                except ValueError:
+                    pos_samples = np.random.choice(np.where(np_y == 1)[0],pcount,replace=True)
+                    neg_samples = np.random.choice(np.where(np_y != 1)[0],k-pcount,replace=True)
                 samples = np.concatenate((pos_samples,neg_samples))
                 np.random.shuffle(samples)
                 del(np_y)
             else:
-                samples = np.random.choice(range(len(X)),k,replace=False)
+                samples = np.random.choice(range(len(X)),k,replace=True)
             
             s_x = [X[s] for s in samples]
             s_y = [Y[s] for s in samples]
