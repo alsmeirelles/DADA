@@ -126,7 +126,7 @@ class Trainer(object):
         #After test set is separated, after data sampling is done, now split train and val
         train_data,val_data = self._ds.split_metadata(self._config.split[:2],data=(X,Y))
 
-        _,sw_thread,_ = self.train_model(net_model,train_data,val_data,save_numpy=True)
+        _,sw_thread,_ = self.train_model(net_model,train_data,val_data,save_numpy=not self._config.smodel)
 
         return sw_thread.join()
 
