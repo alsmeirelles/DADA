@@ -8,8 +8,8 @@ import numpy as np
 from Utils import CalculateF1Score
 from Trainers import ThreadedGenerator
 
-from keras.models import load_model
-from keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.models import load_model
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 def run(config):
     print("Starting Callback Predictions...")

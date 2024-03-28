@@ -20,8 +20,8 @@ import tensorflow as tf
 from tensorflow import keras as keras
 
 #Keras
-from keras import backend as K
-from keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras import backend as K
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 # Training callbacks
 from keras.utils import to_categorical
 from keras.models import load_model
@@ -59,6 +59,7 @@ def print_prediction(config,target=True):
     cache_m = CacheManager()
 
     if not os.path.isfile(cache_m.fileLocation('test_pred.pik')):
+        print("File not found: {}".format(cache_m.fileLocation('test_pred.pik')))
         return None
     
     #Load predictions
@@ -95,6 +96,11 @@ def print_prediction(config,target=True):
         print("False positive rates: {0}".format(fpr))
         print("True positive rates: {0}".format(tpr))
         print("Thresholds: {0}".format(thresholds))
+
+    #Best threshold
+    if nclasses == 2:
+        fscores = [metrics.f1_score(expected,(Y_pred[:,1] >= t).astype(float),pos_label=1) for t in thresholds]
+        print("Best threshold: {}; F1 score: {}".format(thresholds[np.argmax(fscores)],np.max(fscores)))
 
     results['auc'] = np.around(auc,3)
     results['fpr'] = np.mean(fpr)

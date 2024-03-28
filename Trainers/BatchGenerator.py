@@ -6,8 +6,14 @@
 import warnings
 warnings.filterwarnings('ignore')
     
-import keras
-from keras.preprocessing.image import Iterator,ImageDataGenerator
+import tensorflow as tf
+if tf.__version__ >= '1.14.0':
+    from tensorflow.python.util import deprecation
+    deprecation._PRINT_DEPRECATION_WARNINGS = False
+    tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+    from tensorflow import keras as keras
+
+from tensorflow.keras.preprocessing.image import Iterator,ImageDataGenerator
 
 #System modules
 import concurrent.futures
