@@ -5,7 +5,7 @@ imagesize == 1.2.0
 imgaug >= 0.4.0
 keras == 2.15.0
 matplotlib == 3.8.2
-numpy <= 1.20.0
+numpy >= 1.22.0
 opencv-python == 4.8.1.78
 pandas >= 1.1.5
 scikit-image == 0.20.0
