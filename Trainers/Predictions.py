@@ -2,7 +2,7 @@
 #-*- coding: utf-8
 
 import importlib
-import os,sys
+import os, sys
 from tqdm import tqdm
 import numpy as np
 import queue
@@ -12,7 +12,7 @@ from threading import Thread
 from Datasources.CellRep import CellRep
 from .BatchGenerator import ThreadedGenerator
 from .DataSetup import split_test
-from Utils import Exitcodes,CacheManager,PrintConfusionMatrix
+from Utils import Exitcodes, CacheManager, PrintConfusionMatrix
 from AL.Common import load_model_weights
 
 #Tensorflow
@@ -29,7 +29,8 @@ from keras.models import load_model
 #Scikit learn
 from sklearn import metrics
 
-def _fill_queue(queue,steps,generator,workers=3):
+
+def _fill_queue(queue, steps, generator, workers=3):
     qw = concurrent.futures.ThreadPoolExecutor(max_workers=workers)
 
     futures = {}
@@ -37,9 +38,10 @@ def _fill_queue(queue,steps,generator,workers=3):
         futures[qw.submit(generator.next)] = i
 
     for f in concurrent.futures.as_completed(futures):
-        queue.put((f.result(),futures[f]),block=True)
-        
-def run_prediction(config,locations=None):
+        queue.put((f.result(), futures[f]), block=True)
+
+
+def run_prediction(config, locations=None):
     """
     Main training function, to work as a new process
     """
@@ -52,63 +54,88 @@ def run_prediction(config,locations=None):
         print_prediction(config)
     else:
         build_ensemble = True if config.strategy == "EnsembleTrainer" else False
-        predictor = Predictor(config,build_ensemble=build_ensemble)
+        predictor = Predictor(config, build_ensemble=build_ensemble)
         predictor.run()
 
-def print_prediction(config,target=True):
+
+def print_prediction(config, target=True):
     cache_m = CacheManager()
 
     if not os.path.isfile(cache_m.fileLocation('test_pred.pik')):
         return None
-    
-    #Load predictions
-    (expected,Y_pred,nclasses) = cache_m.load('test_pred.pik')
-    y_pred = np.argmax(Y_pred, axis=1)
-    
-    #Output metrics
-    if nclasses > 2:
-        f1 = metrics.f1_score(expected,y_pred,average='weighted')
-    else:
-        f1 = metrics.f1_score(expected,y_pred,pos_label=1)
-    print("F1 score: {0:.2f}".format(f1))
 
-    m_conf = PrintConfusionMatrix(y_pred,expected,nclasses,config,"TILs")
+    #  Load predictions
+    (expected, Y_pred, nclasses) = cache_m.load('test_pred.pik')
 
-    #ROC AUC
-    #Get positive scores (binary only)
+    #  ROC AUC - Produce best thresholds
+    #  Get positive scores (binary only)
     results = {}
+    best_thresh = 0.5
+    auc, fpr, tpr, thresholds = 0.0, 0.0, 0.0, None
     if nclasses == 2:
         scores = Y_pred.transpose()[1]
-        fpr,tpr,thresholds = metrics.roc_curve(expected,scores,pos_label=1)
-        auc = metrics.roc_auc_score(expected,scores)
-        if target:
-            print("AUC: {0:f}".format(auc))
-        else:
-            print("FN AUC: {0:f}".format(auc))
+        fpr, tpr, thresholds = metrics.roc_curve(expected, scores, pos_label=1)
+        auc = metrics.roc_auc_score(expected, scores)
+
+        # Best threshold
+        fscores = [metrics.f1_score(expected, (Y_pred[:, 1] >= t).astype(float), pos_label=1) for t in
+                   thresholds]
+        best_thresh = thresholds[np.argmax(fscores)]
+        print("Best threshold: {0:.3f} -> F1 score: {1:.3f}".format(best_thresh, np.max(fscores)))
+
+    if config.pconf == 0.5:
+        y_pred = np.argmax(Y_pred, axis=1)
+    elif config.pconf > 0.0:
+        y_pred = (Y_pred[:, 1] >= config.pconf).astype(int)
+    else:
+        y_pred = (Y_pred[:, 1] >= best_thresh).astype(int)
+
+    #  Output metrics
+    if nclasses > 2:
+        f1 = metrics.f1_score(expected, y_pred, average='weighted')
+    else:
+        f1 = metrics.f1_score(expected, y_pred, pos_label=1)
+    print("F1 score: {0:.2f}".format(f1))
+
+    m_conf = PrintConfusionMatrix(y_pred, expected, nclasses, config, "TILs")
 
     if target:
-        print("Accuracy: {0:.3f}".format(m_conf[nclasses+2][nclasses]))
+        print("AUC: {0:f}".format(auc))
     else:
-        print("FN Accuracy: {0:.3f}".format(m_conf[nclasses+2][nclasses]))
-        
-    if config.verbose > 1:
+        print("FN AUC: {0:f}".format(auc))
+
+    if target:
+        print("Accuracy: {0:.3f}".format(m_conf[nclasses + 2][nclasses]))
+    else:
+        print("FN Accuracy: {0:.3f}".format(m_conf[nclasses + 2][nclasses]))
+
+    if config.verbose > 1 and nclasses == 2:
         print("False positive rates: {0}".format(fpr))
         print("True positive rates: {0}".format(tpr))
         print("Thresholds: {0}".format(thresholds))
 
-    results['auc'] = np.around(auc,3)
+    if config.verbose > 0:
+        if config.verbose > 1:
+            np.set_printoptions(threshold=np.inf)
+            print("Predicted probs ({1}):\n{0}".format(Y_pred, Y_pred.shape))
+        # print("Y ({1}):\n{0}".format(Y,Y.shape))
+        print("expected ({1}):\n{0}".format(expected, expected.shape))
+        print("Predicted ({1}):\n{0}".format(y_pred, y_pred.shape))
+
+    results['auc'] = np.around(auc, 3)
     results['fpr'] = np.mean(fpr)
     results['tpr'] = np.mean(tpr)
-    results['acc'] = m_conf[nclasses+2][nclasses]
+    results['acc'] = m_conf[nclasses + 2][nclasses]
 
     return results
-        
+
+
 class Predictor(object):
     """
     Class responsible for running the predictions and outputing results
     """
 
-    def __init__(self,config,keepImg=False,**kwargs):
+    def __init__(self, config, keepImg=False, **kwargs):
         """
         @param config <parsed configurations>: configurations
 
@@ -125,7 +152,7 @@ class Predictor(object):
         else:
             self._ensemble = False
 
-    def run(self,x_test=None,y_test=None,load_full=True,net_model=None,target=True):
+    def run(self, x_test=None, y_test=None, load_full=True, net_model=None, target=True):
         """
         Checks configurations, loads correct module, loads data
         Trains!
@@ -144,28 +171,28 @@ class Predictor(object):
             print("A network should be specified")
             return Exitcodes.RUNTIME_ERROR
 
-        #Load DS when a prediction only run is being made
+        #  Load DS when a prediction only run is being made
         if not net_model is None:
             self._ds = net_model.get_ds()
         elif self._config.data:
-            dsm = importlib.import_module('Datasources',self._config.data)
+            dsm = importlib.import_module('Datasources', self._config.data)
             if self._config.testdir:
-                self._ds = getattr(dsm,self._config.data)(self._config.testdir,self._config.keepimg,self._config)
+                self._ds = getattr(dsm, self._config.data)(self._config.testdir, self._config.keepimg, self._config)
             else:
-                self._ds = getattr(dsm,self._config.data)(self._config.predst,self._config.keepimg,self._config)
+                self._ds = getattr(dsm, self._config.data)(self._config.predst, self._config.keepimg, self._config)
         else:
-            self._ds = CellRep(self._config.predst,self._config.keepimg,self._config)
-            
+            self._ds = CellRep(self._config.predst, self._config.keepimg, self._config)
+
         if net_model is None:
-            net_module = importlib.import_module('Models',net_name)
-            net_model = getattr(net_module,net_name)(self._config,self._ds)
+            net_module = importlib.import_module('Models', net_name)
+            net_model = getattr(net_module, net_name)(self._config, self._ds)
 
         if x_test is None or y_test is None:
-            x_test,y_test,_,_ = split_test(self._config,self._ds)
+            x_test, y_test, _, _ = split_test(self._config, self._ds)
 
-        return self.run_test(net_model,x_test,y_test,load_full,target)
-        
-    def run_test(self,model,x_test,y_test,load_full=True,target=True):
+        return self.run_test(net_model, x_test, y_test, load_full, target)
+
+    def run_test(self, model, x_test, y_test, load_full=True, target=True):
         """
         This should be executed after a model has been trained
         """
@@ -173,33 +200,36 @@ class Predictor(object):
         cache_m = CacheManager()
 
         if self._config.verbose > 0:
-            unique,count = np.unique(y_test,return_counts=True)
-            l_count = dict(zip(unique,count))
+            unique, count = np.unique(y_test, return_counts=True)
+            l_count = dict(zip(unique, count))
             if target:
                 print("\n[Predictions] Starting target net evaluation")
             else:
                 print("\n[Predictions] Starting prediction phase")
             if len(unique) > 2:
                 print("Test items:")
-                print("\n".join(["label {0}: {1} items" .format(key,l_count[key]) for key in unique]))
+                print("\n".join(["label {0}: {1} items".format(key, l_count[key]) for key in unique]))
             else:
                 if not 1 in l_count:
                     l_count[1] = 0
-                print("Test labels: {0} are 0; {1} are 1;\n - {2:.2f} are positives".format(l_count.get(0,0),l_count.get(1,0),(l_count.get(1,0)/(l_count.get(0,1)+l_count.get(1,1)))))
+                print("Test labels: {0} are 0; {1} are 1;\n - {2:.2f} are positives".format(l_count.get(0, 0),
+                                                                                            l_count.get(1, 0), (
+                                                                                            l_count.get(1, 0) / (
+                                                                                            l_count.get(0, 1) + l_count.get(1, 1)))))
             print("Test set: {} items".format(len(y_test)))
 
         if self._ensemble or self._config.delay_load:
-            X,Y = x_test,y_test
+            X, Y = x_test, y_test
         else:
-            X,Y = self._ds.load_data(data=(x_test,y_test),keepImg=self._keep)
-                        
+            X, Y = self._ds.load_data(data=(x_test, y_test), keepImg=self._keep)
+
         if self._config.verbose > 1:
-            print("Y original ({1}):\n{0}".format(Y,Y.shape))        
+            print("Y original ({1}):\n{0}".format(Y, Y.shape))
 
         if self._ensemble:
             #Weights should be loaded during ensemble build
-            if hasattr(model,'build_ensemble'):
-                single,parallel = model.build_ensemble(training=False,npfile=True,new=False,load_weights=load_full)
+            if hasattr(model, 'build_ensemble'):
+                single, parallel = model.build_ensemble(training=False, npfile=True, new=False, load_weights=load_full)
                 if parallel:
                     if self._config.info:
                         print("Using multigpu model for predictions.")
@@ -216,84 +246,75 @@ class Predictor(object):
                 if self._config.info:
                     print("Model loaded from: {0}".format(model.get_model_cache()))
             except ValueError:
-                pms = model.build(training=False,pre_load_w=False,new=False)
-                pred_model = load_model_weights(self._config,model,pms)
+                pms = model.build(training=False, pre_load_w=False, new=False)
+                pred_model = load_model_weights(self._config, model, pms)
                 if self._config.info:
                     print("Model could not be loaded: {}".format(model.get_model_cache()))
         else:
-            pms = model.build(training=False,pre_load_w=False,new=False)
-            pred_model = load_model_weights(self._config,model,pms)
+            pms = model.build(training=False, pre_load_w=False, new=False)
+            pred_model = load_model_weights(self._config, model, pms)
             if pred_model is None:
                 return None
 
-        bsize = 2*self._config.batch_size
+        bsize = 2 * self._config.batch_size
         stp = int(np.ceil(len(X) / bsize))
 
-        image_generator = ImageDataGenerator(samplewise_center=self._config.batch_norm, 
-                                            samplewise_std_normalization=self._config.batch_norm)
+        image_generator = ImageDataGenerator(samplewise_center=self._config.batch_norm,
+                                             samplewise_std_normalization=self._config.batch_norm)
 
         if self._ensemble or self._config.delay_load:
             fix_dim = model.check_input_shape()
 
-            test_generator = ThreadedGenerator(dps=(X,Y),
-                                                classes=self._ds.nclasses,
-                                                dim=fix_dim,
-                                                batch_size=bsize,
-                                                image_generator=image_generator,
-                                                extra_aug=False, #self._config.augment,
-                                                shuffle=False,
-                                                verbose=self._verbose,
-                                                input_n=self._config.emodels if self._ensemble else 1,
-                                                keep=self._keep)
+            test_generator = ThreadedGenerator(dps=(X, Y),
+                                               classes=self._ds.nclasses,
+                                               dim=fix_dim,
+                                               batch_size=bsize,
+                                               image_generator=image_generator,
+                                               extra_aug=False,  #  self._config.augment,
+                                               shuffle=False,
+                                               verbose=self._verbose,
+                                               input_n=self._config.emodels if self._ensemble else 1,
+                                               keep=self._keep)
         else:
-            Y = to_categorical(Y,self._ds.nclasses)
+            Y = to_categorical(Y, self._ds.nclasses)
             test_generator = image_generator.flow(x=X,
-                                                y=Y,
-                                                batch_size=bsize,
-                                                shuffle=False)
+                                                  y=Y,
+                                                  batch_size=bsize,
+                                                  shuffle=False)
 
-            
-        del(Y)
-        
+        del (Y)
+
         if self._config.progressbar:
-            l = tqdm(desc="Making predictions...",total=stp)
+            l = tqdm(desc="Making predictions...", total=stp)
 
-        #Multi-threaded batch queue setup
-        Y_pred = np.zeros((len(X),self._ds.nclasses),dtype=np.float32)
-        expected = np.zeros((len(X),self._ds.nclasses),dtype=np.int32)
-        q = queue.Queue(maxsize=self._config.cpu_count*2)
-        th = Thread(target=_fill_queue,name="Batch loader",args=(q,stp,test_generator,self._config.cpu_count))
+        #  Multi-threaded batch queue setup
+        Y_pred = np.zeros((len(X), self._ds.nclasses), dtype=np.float32)
+        expected = np.zeros((len(X), self._ds.nclasses), dtype=np.int32)
+        q = queue.Queue(maxsize=self._config.cpu_count * 2)
+        th = Thread(target=_fill_queue, name="Batch loader", args=(q, stp, test_generator, self._config.cpu_count))
         th.start()
         for k in range(stp):
-            example,i = q.get(block=True)
-            start_idx = i*bsize
-            Y_pred[start_idx:start_idx+bsize] = pred_model.predict_on_batch(example[0])
-            expected[start_idx:start_idx+bsize] = example[1]
+            example, i = q.get(block=True)
+            start_idx = i * bsize
+            Y_pred[start_idx:start_idx + bsize] = pred_model.predict_on_batch(example[0])
+            expected[start_idx:start_idx + bsize] = example[1]
             if self._config.progressbar:
                 l.update(1)
             elif self._config.info:
-                print("Batch prediction ({0}/{1})".format(i,stp))
+                print("Batch prediction ({0}/{1})".format(i, stp))
 
-        del(X)
-        del(test_generator)
+        del (X)
+        del (test_generator)
         th.join()
-        
+
         if self._config.progressbar:
             l.close()
 
         y_pred = np.argmax(Y_pred, axis=1)
         expected = np.argmax(expected, axis=1)
 
-        if self._config.verbose > 0:
-            if self._config.verbose > 1:
-                np.set_printoptions(threshold=np.inf)
-                print("Predicted probs ({1}):\n{0}".format(Y_pred,Y_pred.shape))
-            #print("Y ({1}):\n{0}".format(Y,Y.shape))
-            print("expected ({1}):\n{0}".format(expected,expected.shape))
-            print("Predicted ({1}):\n{0}".format(y_pred,y_pred.shape))
-            
         #Save predictions
-        cache_m.dump((expected,Y_pred,self._ds.nclasses),'test_pred.pik')
+        cache_m.dump((expected, Y_pred, self._ds.nclasses), 'test_pred.pik')
 
         #Output metrics
-        return print_prediction(self._config,target)
+        return print_prediction(self._config, target)
