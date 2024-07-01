@@ -1,5 +1,7 @@
 # Segframe
-Framework to various preprocessing, segmentation and postprocessing tools of medical imagery
+Data Aware Data Acquisition (DADA) is an Active Learning solution that combines uncertainty and representativeness to select anotation images. 
+
+The code is a framework that lets users select their desired CNN, uncertainty functions, selection strategy, among many other possibilities.
 
 ## Dependencies
 Code is compliant with Python3+. Python 2.X is **NOT** supported

@@ -13,10 +13,9 @@ import warnings
 warnings.filterwarnings('ignore')
     
 #Project imports
-from Preprocessing import Preprocess
+
 from Utils import Exitcodes,CacheManager
 from Testing import TrainTest,DatasourcesTest,PredictionTest,ActiveLearningTest
-from Trainers import GenericTrainer,Predictions,ALTrainer
     
 #Supported image types
 img_types = ['svs', 'dicom', 'nii','tif','tiff', 'png']
@@ -43,6 +42,7 @@ def main_exec(config):
         os.mkdir(config.logdir)
         
     if config.preprocess:
+        from Preprocessing import Preprocess
         if config.img_type is None:
             imgt = img_types
         else:
@@ -60,6 +60,7 @@ def main_exec(config):
             Preprocess.preprocess_data(config,imgt)
         
     if config.train:
+        from Trainers import GenericTrainer
         if config.multiprocess:
             ctx = mp.get_context('spawn')
             cache_m = CacheManager()
@@ -73,7 +74,8 @@ def main_exec(config):
         else:
             GenericTrainer.run_training(config,None)
 
-    if config.al:            
+    if config.al:
+        from Trainers import ALTrainer
         if config.multiprocess:
             ctx = mp.get_context('spawn')
             cache_m = CacheManager()
@@ -89,6 +91,7 @@ def main_exec(config):
             getattr(ts,config.strategy).run_training(config,None)
             
     if config.pred:
+        from Trainers import Predictions
         if config.multiprocess:
             ctx = mp.get_context('spawn')
             cache_m = CacheManager()
@@ -196,6 +199,8 @@ if __name__ == "__main__":
     train_args.add_argument('-pos_rt', dest='pos_rt', type=float, 
         help='When sampling, keep a positive rate among samples (Default: not set - use floats [0.0-1.0]).',
         default=None)
+    train_args.add_argument('-save_model', action='store_true', dest='smodel',
+        help='Save full model, not only weights after training.',default=False)    
     
     ##Active Learning options
     al_args = parser.add_argument_group('AL','Active Learning options')
@@ -244,9 +249,9 @@ if __name__ == "__main__":
     al_args.add_argument('-tnpred', dest='tnpred', type=int, 
         help='Train the target network and run prediction on this interval of AL iterations. Default = 0 (do not train/test).',default=0)
     al_args.add_argument('-phi', dest='phi', type=int, 
-        help='Phi defines network architecture reduction. Values bigger than 1 reduce nets by 1/phi. Default = 0 (use original sizes).',default=0)
+        help='Phi defines network architecture reduction. Values bigger than 0 reduce nets by 1/phi. Default = 0 (use original sizes).',default=0)
     al_args.add_argument('-tnphi', dest='tnphi', type=int, 
-        help='Phi defines network architecture reduction. Values bigger than 1 reduce nets by 1/phi. Default = 0 (use original sizes).',default=0)
+        help='Phi defines target network architecture reduction. Values bigger than 0 reduce nets by 1/phi. Default = 0 (use original sizes).',default=0)
     al_args.add_argument('-dye', dest='dye', action='store_true', default=False,
         help='Apply dynamic epoch count adjustment.')
     

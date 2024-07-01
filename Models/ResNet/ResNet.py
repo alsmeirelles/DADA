@@ -184,7 +184,8 @@ def stack2(x, filters, blocks, stride1=2, use_dp=True, training=None, name=None)
     x = block2(x, filters, conv_shortcut=True, stride=stride1,use_dp=use_dp, training=training,name=name + '_block1')
     for i in range(2, blocks):
         x = block2(x, filters, use_dp=use_dp, training=training,name=name + '_block' + str(i))
-    x = block2(x, filters, use_dp=use_dp, training=training, name=name + '_block' + str(blocks))
+    if blocks > 1:
+        x = block2(x, filters, use_dp=use_dp, training=training, name=name + '_block' + str(blocks))
     return x
 
 class ResNet50(GenericEnsemble):

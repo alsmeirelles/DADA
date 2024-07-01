@@ -10,7 +10,7 @@
 #echo commands to stdout
 set -x
 
-DIRID="JS/JS-9"
+DIRID="JS/JS-8"
 
 cd /ocean/projects/asc130006p/alsm/active-learning/Segframe
 
@@ -24,7 +24,7 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/ocean/projects/asc130006p/alsm/venv/lib
 echo '[START] training'
 date +"%D %T"
 
-time python3 Utils/JensenShannon.py -i -v --train -nets EFInception EFInception EFInception -tnet EFInception -data CellRep -predst /ocean/projects/asc130006p/alsm/active-learning/data/nds300 -e 50 -train_set 4000 -val_set 100 -un_set 2000 -tnphi 1 -tdim 240 240 -ac_function bayesian_bald -strategy ActiveLearningTrainer -dropout_steps 20 -emodels 3 -out logs -lr 0.0001 -logdir results/$DIRID -wpath results/$DIRID -model_dir results/$DIRID -cache cache/JS -save_dt -k -d -b 64 -gpu 1 -cpu 15 -acquire 100 -phis 6 6 6 -std
+time python3 Utils/JensenShannon.py -i -v --train -nets ResNet50V2 ResNet50V2 ResNet50V2 -tnet EFInception -data CellRep -predst /ocean/projects/asc130006p/alsm/active-learning/data/nds300 -e 50 -train_set 4000 -val_set 100 -un_set 2000 -tnphi 0 -tdim 240 240 -ac_function bayesian_bald -strategy ActiveLearningTrainer -dropout_steps 20 -emodels 3 -out logs -lr 0.0001 -logdir results/$DIRID -wpath results/$DIRID -model_dir results/$DIRID -cache cache/JS -save_dt -k -d -b 64 -gpu 1 -cpu 15 -acquire 100 -phis 0 0 0 -std -tn
 
 #-plw -lyf 103 
 
