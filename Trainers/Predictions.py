@@ -67,7 +67,7 @@ def print_prediction(config, target=True):
     #  Load predictions
     (expected, Y_pred, nclasses) = cache_m.load('test_pred.pik')
 
-    #  ROC AUC - Produce best thresholds
+    #  ROC AUC - Produce the best thresholds
     #  Get positive scores (binary only)
     results = {}
     best_thresh = 0.5
