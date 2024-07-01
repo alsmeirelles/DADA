@@ -31,7 +31,7 @@ google-pasta==0.2.0
 googleapis-common-protos==1.54.0
 grpcio==1.40.0
 h5py==2.9.0
-idna==3.3
+idna==3.7
 imagecorruptions==1.1.2
 imageio==2.9.0
 imagesize==1.2.0
