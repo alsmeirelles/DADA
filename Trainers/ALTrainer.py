@@ -12,7 +12,7 @@ from datetime import timedelta
 import warnings
 warnings.filterwarnings('ignore')
     
-from keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 #Local
 from .GenericTrainer import Trainer

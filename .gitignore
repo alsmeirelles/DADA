@@ -16,6 +16,7 @@ eggs/
 .eggs/
 lib/
 lib64/
+bin/
 parts/
 sdist/
 var/
@@ -102,3 +103,5 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+Resultados_rodrigo/

@@ -13,17 +13,16 @@ import numpy as np
 #Preparing migration to TF 2.0
 import tensorflow as tf
 if tf.__version__ >= '1.14.0':
-    tf = tf.compat.v1
     from tensorflow.python.util import deprecation
     deprecation._PRINT_DEPRECATION_WARNINGS = False
-    tf.logging.set_verbosity(tf.logging.ERROR)
-    #tf.disable_v2_behavior()
+    tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+    from tensorflow import keras as keras
 
 #Network
 from keras.models import Sequential,Model
 from keras.layers import Input
 from keras import optimizers
-from keras.utils import multi_gpu_model
+#from keras.utils import multi_gpu_model
 from keras import backend as K
 
 #Locals
@@ -105,33 +104,21 @@ class Inception(GenericEnsemble):
                 print("Found previous learning rate: {0}".format(l_rate))
         
         #opt = optimizers.SGD(lr=l_rate, decay=1.5e-4, momentum=0.9, nesterov=True)
-        opt = optimizers.Adam(lr = l_rate)
+        opt = optimizers.Adam(learning_rate = l_rate)
         #opt = optimizers.Adadelta(lr=l_rate)
 
         #Return parallel model if multiple GPUs are available
         parallel_model = None
        
-        if allocated_gpus > 1:
-            with tf.device('/cpu:0'):
-                model.compile(loss='categorical_crossentropy',
+        model.compile(loss='categorical_crossentropy',
                     optimizer=opt,
-                    metrics=['accuracy'])
-            parallel_model = multi_gpu_model(model,gpus=allocated_gpus)
-            parallel_model.compile(loss='categorical_crossentropy',
-                                       optimizer=opt,
-                                       metrics=['accuracy'],
-                                       #options=p_opt, 
-                                       #run_metadata=p_mtd
-                                       )
-        else:
-            model.compile(loss='categorical_crossentropy',
-                optimizer=opt,
-                metrics=['accuracy'],
-                #options=p_opt, 
-                #run_metadata=p_mtd
-                )
+                    metrics=['accuracy'],
+                    #options=p_opt, 
+                    #run_metadata=p_mtd
+                    )
 
-        return (model,parallel_model)        
+        #Parallel models are obsolete as they are now the same in TF2
+        return (model,model)        
 
 
     def _build_architecture(self,input_shape,training=None,preload=True,ensemble=False,layer_freeze=0):
@@ -244,33 +231,20 @@ class EFInception(Inception):
         
         #opt = optimizers.SGD(lr=l_rate, decay=1.5e-4, momentum=0.9, nesterov=True)
         #l_rate = self.rescale('lr',l_rate)
-        opt = optimizers.Adam(lr = l_rate)
+        opt = optimizers.Adam(learning_rate = l_rate)
         #opt = optimizers.Adadelta(lr=l_rate)
 
         #Return parallel model if multiple GPUs are available
         parallel_model = None
        
-        if allocated_gpus > 1:
-            with tf.device('/cpu:0'):
-                model.compile(loss='categorical_crossentropy',
+        model.compile(loss='categorical_crossentropy',
                     optimizer=opt,
-                    metrics=['accuracy'])
-            parallel_model = multi_gpu_model(model,gpus=allocated_gpus)
-            parallel_model.compile(loss='categorical_crossentropy',
-                                       optimizer=opt,
-                                       metrics=['accuracy'],
-                                       #options=p_opt, 
-                                       #run_metadata=p_mtd
-                                       )
-        else:
-            model.compile(loss='categorical_crossentropy',
-                optimizer=opt,
-                metrics=['accuracy'],
-                #options=p_opt, 
-                #run_metadata=p_mtd
-                )
+                    metrics=['accuracy'],
+                    #options=p_opt, 
+                    #run_metadata=p_mtd
+                    )
 
-        return (model,parallel_model)
+        return (model,model)
 
     def rescaleEnabled(self):
         """

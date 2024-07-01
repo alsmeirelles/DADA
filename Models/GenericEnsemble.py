@@ -16,8 +16,7 @@ if tf.__version__ >= '1.14.0':
     tf = tf.compat.v1
     from tensorflow.python.util import deprecation
     deprecation._PRINT_DEPRECATION_WARNINGS = False
-    tf.logging.set_verbosity(tf.logging.ERROR)
-    #tf.disable_v2_behavior()
+    tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
     
 from keras.layers import Average,Concatenate, Flatten
 from keras import backend as K
@@ -218,7 +217,7 @@ class GenericEnsemble(GenericModel):
                     self.register_ensemble(e)
                     emodels[e] = load_model_weights(self._config,self,emodels[e],sw_thread)
                 for l in emodels[e].layers:
-                    l.name = 'EM{}-{}'.format(e,l.name)
+                    l._name = 'EM{}-{}'.format(e,l.name)
                 inputs.extend(emodels[e].inputs)
                 outputs.append(emodels[e].layers[-1].output)
             if allocated_gpus > 1:

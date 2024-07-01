@@ -2,7 +2,7 @@
 #-*- coding: utf-8
 
 # Training callbacks
-from keras.callbacks import Callback
+from tensorflow.keras.callbacks import Callback
 
 import numpy as np
 

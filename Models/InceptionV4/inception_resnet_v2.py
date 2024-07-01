@@ -20,13 +20,16 @@ from __future__ import print_function
 
 import os
 
+import tensorflow as tf
+from tensorflow import keras
+
 from keras import layers
 from keras import backend
 from keras import utils as keras_utils
 from keras import models
-from keras_contrib.layers import GroupNormalization
+from keras.layers import GroupNormalization
 
-import tensorflow as tf
+
 
 BASE_WEIGHT_URL = ('https://github.com/fchollet/deep-learning-models/'
                    'releases/download/v0.7/')

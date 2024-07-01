@@ -2,6 +2,8 @@
 #-*- coding: utf-8
 
 from Models import GenericModel
+import tensorflow as tf
+from tensorflow import keras
 
 #Network
 from keras.models import Sequential,Model
@@ -11,12 +13,12 @@ from keras.layers import Conv2DTranspose
 from keras.layers import Activation, LeakyReLU,BatchNormalization
 from keras.layers import Input,Dot
 from keras import backend, optimizers
-from keras.utils import multi_gpu_model
+#from keras.utils import multi_gpu_model
 from keras import regularizers
-from keras_contrib.layers import GroupNormalization
-import keras
+from keras.layers import GroupNormalization
+
 import numpy as np
-import tensorflow as tf
+
 
 class RepCae(GenericModel):
     """

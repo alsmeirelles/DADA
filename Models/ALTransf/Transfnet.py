@@ -6,6 +6,7 @@ import os
 
 import numpy as np
 import tensorflow as tf
+from tensorflow import keras
 
 #Network
 from keras.models import Sequential,Model
@@ -13,10 +14,10 @@ from keras.layers import Input,Activation
 from keras.layers import Dense, Dropout, Flatten, GlobalAveragePooling2D
 from keras.layers import ZeroPadding2D,Convolution2D, MaxPooling2D
 from keras import backend, optimizers
-from keras.utils import multi_gpu_model
+#from keras.utils import multi_gpu_model
 from keras.applications import vgg16
 from keras import regularizers
-from keras_contrib.layers import GroupNormalization
+from keras.layers import GroupNormalization
 
 #Locals
 from Utils import CacheManager
@@ -99,28 +100,14 @@ class SNet(GenericEnsemble):
         #Return parallel model if multiple GPUs are available
         parallel_model = None
         
-        if self._config.gpu_count > 1:
-            with tf.device('/cpu:0'):
-                model.compile(loss='categorical_crossentropy',
+        model.compile(loss='categorical_crossentropy',
                     optimizer=opt,
-                    metrics=['accuracy'])
+                    metrics=['accuracy'],
+                    #options=p_opt, 
+                    #run_metadata=p_mtd
+                    )
 
-            parallel_model = multi_gpu_model(model,gpus=self._config.gpu_count)
-            parallel_model.compile(loss='categorical_crossentropy',
-                                       optimizer=opt,
-                                       metrics=['accuracy'],
-                                       #options=p_opt, 
-                                       #run_metadata=p_mtd
-                                       )
-        else:
-            model.compile(loss='categorical_crossentropy',
-                optimizer=opt,
-                metrics=['accuracy'],
-                #options=p_opt, 
-                #run_metadata=p_mtd
-                )
-
-        return (model,parallel_model)
+        return (model,model)
 
     def _build_architecture(self,input_shape,training,feature,preload=True,ensemble=False):
             
