@@ -124,6 +124,10 @@ def make_tiles(slide,output_folder,patch_size,wr,csv_dir,debug=False):
     if debug:
         print("Starting SLIDE: {}".format(slide_name))
 
+    to_dir = os.path.join(output_folder,imid)
+    if not os.path.isdir(to_dir):
+        os.mkdir(to_dir)        
+
     csv_data = None
     with open(csv,'r') as fd:
         csv_data = fd.readlines()
@@ -165,17 +169,23 @@ def make_tiles(slide,output_folder,patch_size,wr,csv_dir,debug=False):
         else:
             label = 0
 
-        fname = '{}/{}-{}-{}-{}-{}_{}.png'.format(output_folder, imid, x, y, patch_size, np_patch.shape[0],label)
+        fname = '{}/{}/{}-{}-{}-{}-{}_{}.png'.format(output_folder,imid, imid, x, y, patch_size, np_patch.shape[0],label)
+            
         if debug:
             print("    - {}: prob {}".format(os.path.basename(fname),p2))
 
+        if not patch.info.get('icc_profile') is None:
+            del(patch.info['icc_profile'])
+        
         patch.save(fname);
         pcount += 1
 
         del(np_patch)
             
     oslide.close()
-
+    if debug:
+        print("Finished slide {}: {} total positives".format(imid,pos_count))
+        
     sys.stdout.flush()
     return pcount,pos_count
 
@@ -262,4 +272,4 @@ if __name__ == "__main__":
     print("Total of positive patches generated: {} ({:2.2f} %)".format(total_pos,100*total_pos/total_patches))
 
     if config.txt_label:
-        generate_label_files(config.out_dirt)
+        generate_label_files(config.out_dir)
