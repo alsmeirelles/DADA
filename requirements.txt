@@ -78,7 +78,7 @@ threadpoolctl==2.2.0
 tifffile==2021.8.30
 tqdm==4.62.3
 typing-extensions==3.10.0.2
-urllib3==1.26.8
+urllib3==1.26.19
 virtualenv==20.8.1
 Werkzeug==2.0.1
 wrapt==1.12.1
