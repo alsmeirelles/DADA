@@ -1,39 +1,29 @@
 #!/bin/bash
-#SBATCH -p GPU-AI
-#SBATCH -t 20:00:00
-#SBATCH --gres=gpu:volta16:2
+#SBATCH -p GPU-shared
+#SBATCH -N 1
+#SBATCH -t 15:00:00
+#SBATCH --gpus=v100-32:1
+#SBATCH --exclude=v034
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=alsmeirelles@gmail.com
 
 #echo commands to stdout
 #set -x
 
-DIRID="AL-155"
-export PYTHONPATH=$HOME/.local/lib/python3.6/site-packages:/pylon5/ac3uump/alsm/lib64/python3.6/site-packages:$PYTHONPATH
-
-if [ ! -d $LOCAL/test ]
-then
-    mkdir $LOCAL/test;
-fi
-
-cd $LOCAL/test/
-
-echo 'Uncompressing data to LOCAL'
-
-cp /pylon5/ac3uump/alsm/active-learning/data/lym_cnn_training_data.tar $LOCAL/test/
-tar -xf lym_cnn_training_data.tar -C $LOCAL/test
-
-cd /pylon5/ac3uump/alsm/active-learning/Segframe
+DIRID="AL/AL-356"
+cd /ocean/projects/asc130006p/alsm/active-learning/Segframe
 
 echo '[VIRTUALENV]'
-source /pylon5/ac3uump/alsm/venv/bin/activate
+source /ocean/projects/asc130006p/alsm/venv/bin/activate
 
-module load cuda/9.0
+#Load CUDA and set LD_LIBRARY_PATH
+module load cuda/10.0.0
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/ocean/projects/asc130006p/alsm/venv/lib64/cuda-10.0.0
 
 echo '[START] training'
 date +"%D %T"
 
-time python3 main.py -i -v --al -predst $LOCAL/test/lym_cnn_training_data -split 0.85 0.05 0.10 -net Inception -data CellRep -init_train 500 -ac_steps 20 -dropout_steps 20 -ac_function random_sample -acquire 200 -d -e 50 -b 60 -tdim 240 240 -out logs/ -cpu 9 -gpu 2 -tn -sv -nsw -wpath results/$DIRID -model_dir results/$DIRID -logdir results/$DIRID -cache results/$DIRID -sample 10000 -load_train
+time python3 main.py -i -v --al -predst /ocean/projects/asc130006p/alsm/active-learning/data/AL-211-Aug -split 0.99 0.01 0.0 -net EFInception -data AqSet -init_train 500 -ac_steps 20 -ac_function random_sample -acquire 200 -d -k -e 50 -b 64 -tdim 240 240 -out logs/ -cpu 15 -gpu 1 -tn -sv -nsw -wpath results/$DIRID -model_dir results/$DIRID -logdir results/$DIRID -cache results/$DIRID -test_dir /ocean/projects/asc130006p/alsm/active-learning/data/T5-2-test -phi 1 -lr 0.0001
 
 echo '[FINAL] done training'
 

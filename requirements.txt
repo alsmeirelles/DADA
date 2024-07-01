@@ -4,7 +4,7 @@ imagesize == 1.2.0
 imgaug >= 0.4.0
 keras >= 2.13.1
 matplotlib >= 3.7.4
-numpy >= 1.20.0
+numpy >= 1.22.0
 opencv-python == 4.8.1.78
 pandas >= 1.1.5
 scikit-image == 0.20.0
@@ -13,3 +13,6 @@ tensorflow >= 2.13.1
 tqdm >= 4.56.2
 virtualenv >= 20.4.2
 keras-utils == 1.0.13
+scikit-image==0.20.0
+scikit-learn==1.4.0
+scipy==1.12.0
