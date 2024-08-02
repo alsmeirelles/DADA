@@ -180,7 +180,7 @@ def make_tiles(slide_name,output_folder,patch_size_20X,wr,hms,debug=False,hmc=Fa
             patch = oslide.read_region((x, y), 0, (pw_x, pw_y));
             np_patch = np.array(patch)
             if not background(np_patch) and white_ratio(np_patch) <= wr:
-                patch = patch.resize((out_pw, out_pw), Image.ANTIALIAS);
+                patch = patch.resize((out_pw, out_pw), Image.LANCZOS);
                 if not hms is None:
                     label = get_patch_label(hm,imid,x,y,pw_amp,hms,debug,hm_coords)
                     if label > 0:
